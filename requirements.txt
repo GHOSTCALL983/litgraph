@@ -1,0 +1,4 @@
+# LitGraph backend deps. Core uses only these two (no web framework — stdlib server).
+requests>=2.31
+pypdf>=4.0
+# Optional: set S2_API_KEY env var for higher Semantic Scholar rate limits.

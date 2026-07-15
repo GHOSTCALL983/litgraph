@@ -1,0 +1,842 @@
+<title>LitGraph — Documentation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Shreyan Kundu">
+<meta name="description" content="LitGraph documentation — what it does, how it works, and what it can't do. In plain English and in technical detail.">
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#26303d;--text:#e6edf3;--muted:#8b98a5;
+    --accent:#f2a900;--blue:#58a6ff;--green:#3fb950;--purple:#bc8cff;--red:#f85149;
+    --amber:#d29922}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);
+    color:var(--text);line-height:1.62}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;
+    flex-wrap:wrap;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--border)}
+  header .brand{font-size:18px;font-weight:800}.brand span{color:var(--accent)}
+  header .grow{flex:1}
+  .vtag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;
+    background:#12331c;color:var(--green)}
+  .btn{cursor:pointer;border:1px solid var(--border);background:#1c2530;color:var(--text);
+    border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:600}
+  .btn.primary{background:var(--accent);color:#1a1200;border-color:var(--accent)}
+  .layout{display:flex;max-width:1200px;margin:0 auto;gap:28px;padding:22px 20px 80px}
+  nav{position:sticky;top:64px;align-self:flex-start;width:205px;flex:none;font-size:12.5px;
+    max-height:calc(100vh - 90px);overflow-y:auto}
+  nav a{display:block;color:var(--muted);padding:5px 8px;border-left:2px solid transparent;
+    border-radius:0 6px 6px 0}
+  nav a:hover,nav a.active{color:var(--text);border-left-color:var(--accent);background:#12171e;
+    text-decoration:none}
+  nav .navhead{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#5d6773;
+    margin:14px 0 4px 8px;font-weight:800}
+  main{flex:1;min-width:0}
+  section{margin-bottom:40px;scroll-margin-top:70px}
+  h1{font-size:27px;margin:0 0 8px}
+  h2{font-size:20px;margin:0 0 12px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+  h3{font-size:15px;margin:20px 0 6px}
+  p{margin:9px 0}
+  code{background:#12171e;border:1px solid var(--border);border-radius:5px;padding:1px 6px;
+    font-size:12.5px;color:#f0b872;white-space:nowrap}
+  pre{background:#12171e;border:1px solid var(--border);border-radius:9px;padding:12px 14px;
+    overflow-x:auto;font-size:12.5px;line-height:1.5}
+  pre code{background:none;border:none;padding:0;color:#c9d4e0;white-space:pre}
+  ul,ol{margin:9px 0;padding-left:22px}li{margin:5px 0}
+  .lead{font-size:15px;color:#c9d4e0}
+  .subline{color:var(--muted);font-size:13px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:14px 16px;margin:12px 0}
+  /* the technical half — hidden when you pick Plain English */
+  .tech{background:#10161f;border:1px solid #223047;border-left:3px solid var(--blue);
+    border-radius:0 10px 10px 0;padding:12px 16px;margin:12px 0}
+  .tech .tlabel{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--blue);margin-bottom:5px}
+  .plain{background:#101a13;border:1px solid #1e3a26;border-left:3px solid var(--green);
+    border-radius:0 10px 10px 0;padding:12px 16px;margin:12px 0}
+  .plain .tlabel{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--green);margin-bottom:5px}
+  .warn{background:#231a10;border:1px solid #4a3a16;border-left:3px solid var(--amber);
+    border-radius:0 10px 10px 0;padding:12px 16px;margin:12px 0}
+  .warn .tlabel{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--amber);margin-bottom:5px}
+  body.simple .tech{display:none}
+  body.techonly .plain{display:none}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}
+  th{background:#12171e;text-align:left;padding:8px 10px;border:1px solid var(--border);
+    font-size:12px}
+  td{padding:8px 10px;border:1px solid var(--border);vertical-align:top}
+  td code{white-space:normal}
+  .tblwrap{overflow-x:auto}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .seg button{background:#0d1117;border:none;color:var(--muted);padding:7px 12px;font-size:12px;
+    font-weight:700;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#1a1200}
+  .foot{max-width:1200px;margin:0 auto;padding:0 20px 60px;color:var(--muted);font-size:12px;
+    text-align:center}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;
+    background:#13233a;color:var(--blue)}
+  .gone{background:#3a2020;color:var(--red)}
+  .new{background:#12331c;color:var(--green)}
+  @media(max-width:900px){nav{display:none}.layout{padding:16px}}
+  /* Printing / PDF: drop the chrome, show BOTH voices, keep it readable on paper. */
+  @media print{
+    body{background:#fff;color:#111;font-size:10.5pt;line-height:1.45}
+    body.simple .tech,body.techonly .plain{display:block !important}
+    /* The on-screen greys are far too pale on white paper. */
+    .lead{color:#222}
+    .subline{color:#555}
+    .plain,.tech,.warn,.card,p,li,td{color:#111}
+    header,nav,.noprint{display:none !important}
+    .layout{display:block;max-width:none;padding:0}
+    a{color:#0b4da2}
+    a[href^="http"]::after{content:" (" attr(href) ")";font-size:8pt;color:#555}
+    h1{font-size:20pt}h2{font-size:14pt;border-bottom:1px solid #bbb;page-break-after:avoid}
+    h3{font-size:11.5pt;page-break-after:avoid}
+    section{page-break-inside:auto;margin-bottom:16pt}
+    .card,.tech,.plain,.warn{background:#f6f7f9;border:1px solid #ccc;border-left:3px solid #888;
+      page-break-inside:avoid}
+    .tech .tlabel{color:#1a4d8f}.plain .tlabel{color:#1d6b33}.warn .tlabel{color:#8a6300}
+    code{background:#eee;border:1px solid #ddd;color:#8a4b00}
+    pre{background:#f6f7f9;border:1px solid #ccc;page-break-inside:avoid}
+    pre code{color:#222}
+    th{background:#eee}th,td{border:1px solid #bbb}
+    table,.tblwrap{page-break-inside:avoid}
+    .pill{border:1px solid #999;color:#333;background:#eee}
+  }
+</style>
+
+<header class="noprint">
+  <div class="brand">Lit<span>Graph</span> · Docs</div>
+  <span class="vtag" id="vtag">v2.0</span>
+  <div class="grow"></div>
+  <div class="seg" id="voice">
+    <button data-v="both" class="on">Both</button>
+    <button data-v="simple">Plain English</button>
+    <button data-v="tech">Technical</button>
+  </div>
+  <a class="btn primary" href="/docs.pdf" download="LitGraph-Documentation.pdf">⤓ PDF</a>
+  <a href="/system">System map</a>
+  <a href="/">Open app →</a>
+</header>
+
+<div class="layout">
+  <nav id="toc">
+    <div class="navhead">Start here</div>
+    <a href="#what">What it is</a>
+    <a href="#whatsnew">What's new in v2.0</a>
+    <a href="#quick">How to use it</a>
+    <div class="navhead">The graph</div>
+    <a href="#tabs">The controls</a>
+    <a href="#limits">Limits &amp; the real caps</a>
+    <a href="#priority">Priority (sorting)</a>
+    <a href="#toggles">The toggles</a>
+    <a href="#expand">Expanding &amp; batching</a>
+    <div class="navhead">Constraints</div>
+    <a href="#arxiv">Coverage: the arXiv filter</a>
+    <a href="#simcorpus">Where "similar" comes from</a>
+    <a href="#fakesort">Result ordering</a>
+    <a href="#nociting">Removed: citation lookup</a>
+    <a href="#limitations">Known limitations</a>
+    <div class="navhead">Technical</div>
+    <a href="#architecture">Architecture</a>
+    <a href="#pipeline">The fetch pipeline</a>
+    <a href="#api">HTTP API</a>
+    <a href="#cache">Cache &amp; rate limits</a>
+    <a href="#auth">Auth &amp; admin</a>
+    <a href="#run">Running it</a>
+    <a href="#licensing">Data &amp; licensing</a>
+    <a href="#changelog">Changelog</a>
+  </nav>
+
+  <main>
+    <h1>LitGraph documentation</h1>
+    <p class="lead">Everything this tool does, how it does it, and — just as importantly —
+    what it <b>can't</b> do. Written twice: once in plain English, once for engineers.
+    Use the <b>Both / Plain English / Technical</b> switch above to pick your voice.</p>
+    <p class="lead subline">
+      Version <b id="vline">2.0</b> · released <span id="rline">2026-07-15</span> ·
+      created by <b>Shreyan Kundu</b> · <a href="/docs.pdf" download="LitGraph-Documentation.pdf">download this as a PDF</a>.
+      The PDF always contains both voices regardless of the switch.</p>
+
+    <section id="what">
+      <h2>What it is</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        Give LitGraph an arXiv paper — paste its id, type its title, or upload the PDF —
+        and it draws you a map. The map shows the paper in the middle, the older papers it
+        was built on, papers on similar topics, and everyone who wrote them. You can click
+        any dot to read about it, and click again to grow the map outward.
+      </div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        A vanilla-JS <a href="https://js.cytoscape.org" target="_blank">Cytoscape.js</a>
+        frontend over a pure-standard-library Python HTTP server, sourcing open scholarly
+        data from the <a href="https://api.semanticscholar.org" target="_blank">Semantic
+        Scholar Graph API</a>. Runtime dependencies are <code>requests</code> and
+        <code>pypdf</code> — no web framework, no ORM, no build step. Nodes are papers and
+        authors; edges are <code>cites</code>, <code>similar</code> and <code>authored</code>.
+      </div>
+      <p>Three kinds of thing end up on the map:</p>
+      <div class="tblwrap"><table>
+        <tr><th>On the map</th><th>What it means</th><th>Where it comes from</th></tr>
+        <tr><td><b style="color:var(--blue)">Blue dot</b> — referenced paper</td>
+            <td>A paper your seed paper cites. Older work it built on.</td>
+            <td><code>/paper/{id}/references</code></td></tr>
+        <tr><td><b style="color:var(--purple)">Purple dot</b> — similar paper</td>
+            <td>Related work. Semantic Scholar decides what counts as similar, not us.
+                See <a href="#simcorpus">which corpus it draws from</a>.</td>
+            <td><code>/recommendations/v1/papers/forpaper/{id}</code></td></tr>
+        <tr><td><b style="color:var(--green)">Green square</b> — author</td>
+            <td>A person. Linked to every paper of theirs on the map.</td>
+            <td>Rides along free inside each paper record</td></tr>
+        <tr><td><b style="color:var(--accent)">Gold dot</b> — your seed paper</td>
+            <td>The paper you asked about. Always kept, even without an arXiv id.</td>
+            <td>Resolved via <code>arXiv:{id}</code> or title search</td></tr>
+      </table></div>
+      <div class="plain"><div class="tlabel">Why authors matter</div>
+        Authors are the glue. The same person is a single dot no matter how many papers
+        they wrote, so two authors who worked together meet at the paper they share, and
+        someone who shows up on lots of papers becomes an obvious hub. That's the
+        "how is this field connected" view.
+      </div>
+    </section>
+
+    <section id="whatsnew">
+      <h2>What's new in v2.0 <span class="pill new">this version</span></h2>
+      <p>v2.0 is about <b>control and honesty</b>. v1.0 gave you three fixed depth presets
+      and no say in anything. Now you choose what to fetch, how much, and what counts as
+      important — and the app tells you the truth about the parts that don't work well.</p>
+      <ul>
+        <li><b>You set the limits</b> — a limit box per source, capped at what the API
+          genuinely allows.</li>
+        <li><b>Priority</b> — rank by most cited, newest, or oldest.</li>
+        <li><b>A References toggle</b> — v1.0 had toggles for everything <i>except</i>
+          references.</li>
+        <li><b>Your limit finally means what it says</b> — see
+          <a href="#pipeline">the fetch pipeline</a>.</li>
+        <li><b>Citing papers removed</b> <span class="pill gone">gone</span> — and
+          <a href="#nociting">here's the honest reason</a>.</li>
+        <li><b>This page</b>, plus a PDF of it.</li>
+      </ul>
+      <div class="tech"><div class="tlabel">Technical</div>
+        The <code>MODES</code> presets became data in the same shape as a user config;
+        <code>normalize()</code> validates and clamps any incoming config against the API's
+        real ceilings. <code>/api/analyze</code> and <code>/api/expand</code> now accept an
+        optional <code>config</code> object, and <code>/api/config</code> publishes
+        <code>max_limits</code>, <code>sorts</code> and
+        <code>presets</code> so the UI derives its own constraints from the server rather
+        than hardcoding them.
+      </div>
+    </section>
+
+    <section id="quick">
+      <h2>How to use it</h2>
+      <ol>
+        <li>Type an arXiv id, a title, or upload a PDF. Any of these shapes work:
+          <code>1706.03762</code>, <code>1706.03762v7</code>, <code>arXiv:1706.03762</code>,
+          or a pasted <code>arxiv.org/abs/…</code> link.</li>
+        <li>Optionally set how many of each thing you want, and what to prioritise.</li>
+        <li>Hit <b>Analyze</b>.</li>
+        <li>Click any dot for its abstract and arXiv link.</li>
+        <li>Click <b>Expand</b> in the side panel to grow the map from that dot.</li>
+      </ol>
+      <div class="plain"><div class="tlabel">Two useful behaviours</div>
+        <b>＋ Add</b> queues several papers into one shared map — papers they both cite show
+        up once, in the middle, which is a quick way to see how two lines of work connect.
+        And anything you've looked at before loads instantly, because it's cached.
+      </div>
+    </section>
+
+    <section id="tabs">
+      <h2>The controls</h2>
+      <p>One row above the graph, four groups. Set them and hit Analyze.</p>
+      <div class="tblwrap"><table>
+        <tr><th>Group</th><th>What it does</th></tr>
+        <tr><td><b>References</b></td>
+            <td><b>Limit</b> — how many of the papers your seed cites to show (max 1000).
+                <b>Priority</b> — which ones, when there are more than your limit.</td></tr>
+        <tr><td><b>Similar</b></td>
+            <td><b>Limit</b> — how many related papers (max 500). <b>Priority</b> — Most
+                relevant keeps Semantic Scholar's own ranking.</td></tr>
+        <tr><td><b>Authors</b></td>
+            <td><b>Per paper</b> — how many authors to draw per paper (max 50).
+                <b>From</b> — every paper, or only the seed's.</td></tr>
+        <tr><td><b>2nd hop</b></td>
+            <td>Take your most-cited references and pull <i>their</i> references too.</td></tr>
+      </table></div>
+      <p>The <b>Quick / Deep / Complex</b> dropdown is just a shortcut: it loads a set of
+      starting numbers into these controls. Nothing stops you changing them afterwards.</p>
+      <div class="tech"><div class="tlabel">Technical</div>
+        The controls serialise straight into the <code>config</code> object documented under
+        <a href="#api">HTTP API</a>, which <code>normalize()</code> validates and clamps
+        server-side. Any source set to <code>0</code> returns before an HTTP call is made, so
+        zeroing a limit costs nothing — that's how you isolate a single source if you want to
+        study one on its own.
+      </div>
+      <div class="warn"><div class="tlabel">Note</div>
+        <b>2nd hop</b> takes your most-cited references and pulls <i>their</i> references too —
+        15 each. It multiplies the work, so it's off by default except in the Complex preset,
+        which sets it to 6.
+      </div>
+    </section>
+
+    <section id="limits">
+      <h2>Limits &amp; the real caps</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        Every tab has a box for how many papers you want, and next to it the biggest number
+        that's actually allowed. Type something bigger and it snaps back. These aren't
+        numbers we invented — they're the real ceilings Semantic Scholar enforces.
+      </div>
+      <div class="tblwrap"><table>
+        <tr><th>Setting</th><th>Cap</th><th>How we know</th></tr>
+        <tr><td>References per paper</td><td><b>1000</b></td>
+            <td>1001 returns <code>400 'limit' must be &lt;= 1000</code></td></tr>
+        <tr><td>Similar papers</td><td><b>500</b></td>
+            <td>501 returns <code>400 Limit must be between 0 and 500</code></td></tr>
+        <tr><td>Papers per author</td><td><b>1000</b></td>
+            <td>1001 returns <code>400 'limit' must be &lt;= 1000</code></td></tr>
+        <tr><td>Authors per paper</td><td><b>50</b></td>
+            <td>Our own limit — author lists come embedded, so this is just readability</td></tr>
+        <tr><td>2nd hop refs to expand</td><td><b>25</b></td>
+            <td>Our own limit — each one costs another request</td></tr>
+      </table></div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        Ceilings live in <code>sources.MAX_LIMIT</code> and were established empirically by
+        probing the live API for the 400 it returns one past the edge. They're enforced in
+        three places: the number input's <code>max</code> attribute, a JS clamp on change,
+        and <code>graph_builder._clamp()</code> server-side. The server clamp is the one that
+        matters — a hand-rolled <code>curl</code> asking for 99999 gets a clamped
+        <b>200</b>, never a 400 from upstream. <code>/api/config</code> publishes
+        <code>max_limits</code> so the UI never hardcodes them.
+      </div>
+      <div class="warn"><div class="tlabel">Note</div>
+        Paging is capped at <code>offset + limit &lt; 10000</code>, so no more than 10,000
+        rows of any one list are reachable even in principle. It doesn't bite for references
+        (papers rarely cite more than a few hundred things).
+      </div>
+    </section>
+
+    <section id="priority">
+      <h2>Priority (sorting)</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        If a paper has 200 references and you only want 40, <i>which</i> 40 matters. Priority
+        decides: the 40 most-cited, the 40 newest, or the 40 oldest. "Most cited" is usually
+        what you want — it surfaces the classics.
+      </div>
+      <ul>
+        <li><b>Most cited</b> — the influential ones first.</li>
+        <li><b>Newest first</b> — what's happening lately.</li>
+        <li><b>Oldest first</b> — the roots of the idea.</li>
+        <li><b>API order</b> — whatever Semantic Scholar hands back, unsorted.</li>
+      </ul>
+      <div class="tech"><div class="tlabel">Technical</div>
+        <code>sources.sort_papers()</code>. Missing values are handled so ranking never
+        throws: <code>citationCount</code> falls back to <code>0</code>,
+        <code>year</code> to <code>0</code> descending / <code>9999</code> ascending, which
+        parks undated papers at the bottom either way. Sorting happens
+        <b>after</b> the arXiv filter and <b>before</b> the trim — see
+        <a href="#pipeline">the pipeline</a> — and we do it ourselves for the reason in
+        <a href="#fakesort">the next section</a>.
+      </div>
+    </section>
+
+    <section id="toggles">
+      <h2>The toggles</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        The three checkboxes on the graph — References, Similar papers, Authors — just show
+        and hide things. They never re-fetch, so they're instant, and nothing is lost: untick
+        and tick, and it's all back.
+      </div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        <code>applyFilters()</code> keys off <b>edge relationships</b>, not node types. It has
+        to: a paper node's <code>type</code> can't express that a paper is both a reference
+        and a similar paper — first write wins — so the relationship only truly exists on the
+        edge. The function hides edges by <code>rel</code>, then drops any paper with no
+        surviving structural edge (<code>cites</code>/<code>similar</code>), then re-checks,
+        iterating to a fixed point (authors can be stranded by a paper that was itself
+        stranded). Author edges deliberately don't count as structural, or a reference would
+        cling to the graph via its authors after you unticked References. Visibility is
+        computed in plain JS first and applied inside a single <code>cy.batch()</code>, so no
+        style is ever read back mid-batch.
+      </div>
+      <div class="warn"><div class="tlabel">Export behaviour</div>
+        Hidden nodes are excluded from <b>PNG</b> export (they aren't rendered) but are still
+        present in <b>JSON</b> export, which always contains the full graph.
+      </div>
+    </section>
+
+    <section id="expand">
+      <h2>Expanding &amp; batching</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        Click a paper and hit <b>Expand</b> and its own references and similar papers join the
+        map. Click an author and expand, and you get the rest of their work. The map grows
+        instead of starting over, and the button locks so you can't expand the same dot twice.
+      </div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        <code>POST /api/expand</code> with <code>{id, type}</code>. The builder starts from an
+        empty node/edge map and has no knowledge of what's already on screen, so it returns its
+        whole neighbourhood and <code>mergeIntoGraph()</code> discards ids the client already
+        holds. The clicked node is never returned — only referenced by id in the new edges.
+        Layout re-runs with <code>randomize:false</code> so existing nodes keep their
+        positions. Expand uses the fixed <code>EXPAND</code> config (25 refs, 8 similar, 30
+        author papers), <b>not</b> the control-bar settings. The expanded flag lives in browser
+        state only and is forgotten on re-analyze.
+      </div>
+      <p><b>Batching:</b> <code>＋ Add</code> queues several seeds into one build. Because nodes
+      are keyed by Semantic Scholar's <code>paperId</code> and authors by
+      <code>author:{authorId}</code>, anything two seeds share is deduplicated into a single
+      node automatically — which is what visually connects them.</p>
+    </section>
+
+    <section id="arxiv">
+      <h2>Coverage: the arXiv filter</h2>
+      <div class="warn"><div class="tlabel">Important</div>
+        LitGraph keeps <b>arXiv papers only</b>. Everything else — books, journal-only papers,
+        older work, anything paywalled — is silently dropped. This is usually what's shrinking
+        your graph, <b>not</b> your limit.
+      </div>
+      <div class="plain"><div class="tlabel">What this means in practice</div>
+        Coverage varies sharply by field and by era. For a representative machine-learning
+        paper, only a small minority of its references — frequently around one in ten — are
+        present on arXiv. The rest are real and correctly cited; they simply have no
+        open-access arXiv record, so they cannot carry a guaranteed free full-text link.
+        Raising your limit will not recover them.
+      </div>
+      <p>This is a deliberate trade, not a bug. It's what lets every dot on the map open a
+      free full text. The cost is that the map is a view of <i>the open-access slice</i> of the
+      literature, not the whole of it.</p>
+      <div class="tech"><div class="tlabel">Technical</div>
+        <code>arxiv_id_of()</code> reads <code>externalIds.ArXiv</code>; papers without one are
+        filtered out in <code>_fetch()</code>. The seed itself is exempt and always kept.
+        Observed survival rates through the filter run at roughly 10–35% depending on the
+        paper and the source. Relaxing the filter to include non-arXiv papers — rendered
+        distinctly and without a PDF link — is a configuration change rather than a rewrite,
+        and would increase reference coverage by roughly an order of magnitude.
+      </div>
+    </section>
+
+    <section id="simcorpus">
+      <h2>Where "similar" comes from</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        Semantic Scholar's recommendation service can search two different pools: only
+        <b>recent</b> papers, or the <b>whole corpus</b>. It defaults to recent — which for a
+        literature survey is unsuitable, because "recent" restricts results to newly posted preprints that
+        have not yet accumulated citations. LitGraph asks for the whole corpus.
+      </div>
+      <div class="warn"><div class="tlabel">Why the default is unsuitable</div>
+        Corrected in v2.0. The service's default pool restricts recommendations to recently
+        posted work. For an established paper this returns either nothing at all, or a set of
+        new preprints that have not yet accumulated citations — in both cases, no useful
+        neighbourhood, and no error to indicate the problem.
+        <br><br>
+        Requesting the full corpus returns the recognised related work for the same paper:
+        the same endpoint, the same single request, one parameter different.
+      </div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        <code>sources.similar()</code> sends <code>from=all-cs</code>. The parameter is
+        undocumented in the obvious places and defaults to <code>recent</code>, so it's easy to
+        never discover — nothing errors, you just quietly get bad recommendations. We fall back
+        to the default pool when all-cs returns nothing, because all-cs is the <b>computer
+        science</b> corpus and arXiv is not only CS: a physics or biology paper is better
+        served by the default than by an empty graph.
+      </div>
+      <div class="warn"><div class="tlabel">Note</div>
+        This endpoint rate-limits harder than the rest of the API and doesn't always honour an
+        API key. If similar papers come back empty for a paper that should have neighbours,
+        wait a moment and retry.
+      </div>
+    </section>
+
+    <section id="fakesort">
+      <h2>Result ordering</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        Semantic Scholar's API looks like you can ask it to sort results. You can't — it
+        accepts the request, says "OK", and ignores it. So LitGraph downloads a big batch and
+        does the sorting itself.
+      </div>
+      <div class="tech"><div class="tlabel">Verification</div>
+        Passing <code>sort=citationCount:desc</code> to <code>/paper/{id}/citations</code>
+        returns <b>200</b> with rows in the same order as no sort at all. The clincher:
+        <code>sort=bogusfield:desc</code> — a field that cannot exist — also returns
+        <b>200</b> with identical rows. An API that validated its sort key would reject that.
+        So the parameter is accepted and discarded, and passing it would be a silent no-op
+        that <i>looks</i> like a working feature. All ordering is therefore done in
+        <code>sort_papers()</code> after fetching.
+      </div>
+      <div class="card"><b>A useful consequence.</b> Because we fetch a pool and sort
+      locally, changing a limit doesn't need the network at all — the pool is already cached,
+      so we just re-slice it. Asking for 10 references instead of 40 is instant.</div>
+    </section>
+
+    <section id="nociting">
+      <h2>Removed in v2.0: citation lookup <span class="pill gone">removed</span></h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        v1.0 could show you papers that <i>cite</i> your paper — its descendants. It's a
+        genuinely useful idea, and it was removed because it couldn't be made to work
+        honestly.
+      </div>
+      <p>The problem is scale plus ordering:</p>
+      <ul>
+        <li>A seminal paper may be cited on the order of <b>100,000</b> times. v1.0's Deep
+          mode displayed <b>15</b> of them.</li>
+        <li>The API returns them in a recency-biased order and — per
+          <a href="#fakesort">above</a> — cannot sort. So those 15 were 2026 papers with
+          <b>0 citations each</b>: the most obscure work that ever touched it.</li>
+        <li>Fetching a 1000-paper pool and ranking it ourselves didn't rescue it. The
+          most-cited paper in that pool had <b>33 citations</b>. BERT, GPT and the rest —
+          the actual descendants worth seeing — weren't in the pool at all.</li>
+        <li>Paging can only reach 10,000 of ~100,000, and the same bias applies throughout.</li>
+      </ul>
+      <div class="card"><b>Design rationale.</b> The feature could have shipped with a limit
+      box and a priority dropdown. It would have appeared identical to the other sources and behaved as though it worked. But sorting a biased sample just gives you a tidily-ordered biased
+      sample — a feature that misrepresents its own fidelity is worse than no feature. It was cut rather
+      than presented as functional.</div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        Removed outright, not disabled: <code>SemanticScholar.citations()</code>, the
+        <code>cited_by</code> edge type and its styling, its controls, its toggle, and
+        the <code>cites</code> key from every preset and from <code>EXPAND</code>. A stale
+        client sending a stale config is ignored rather than erroring. Expand is one API
+        call cheaper as a result. Restoring it would mean
+        re-adding one client method and one edge type — the pipeline would take it back
+        unchanged.
+      </div>
+    </section>
+
+    <section id="limitations">
+      <h2>Known limitations</h2>
+      <p>Stated explicitly, so that none of it is a surprise in deployment:</p>
+      <ul>
+        <li><b>Non-arXiv papers are invisible.</b> See <a href="#arxiv">above</a> — this is
+          the big one.</li>
+        <li><b>No "who cited this".</b> Removed in v2.0, <a href="#nociting">reasons here</a>.</li>
+        <li><b>Similar papers can still come back empty</b> for very new or non-CS papers,
+          and it fails quietly — no purple dots, no message. Much rarer since v2.0
+          (<a href="#simcorpus">why</a>), but not impossible.</li>
+        <li><b>Reference lists are Semantic Scholar's, not the PDF's.</b> Upload a PDF and we
+          only read its arXiv id or title out of it; the bibliography comes from S2, and can be
+          incomplete for very new papers.</li>
+        <li><b>PDF title detection is a heuristic.</b> It takes the biggest text on page 1,
+          which is right for normal papers but can misfire on unusual layouts (a huge cover
+          heading, a slide deck). An arXiv id inside the PDF is always the reliable path — and
+          when one is present the title isn't used to identify the paper at all.</li>
+        <li><b>Old-style arXiv ids aren't auto-detected.</b> Both the PDF scanner and the
+          id parser match the post-2007 scheme (<code>1706.03762</code>) only, so
+          <code>hep-th/9901001</code> isn't recognised inside a PDF. You can still paste one
+          into the box — it's passed to Semantic Scholar untouched.</li>
+        <li><b>The frontend needs internet</b> even for cached data — Cytoscape loads from a CDN.</li>
+        <li><b>Author identity is only as good as S2's.</b> Same-name researchers may merge or
+          split; we key on <code>authorId</code> and inherit whatever it says.</li>
+        <li><b>Sessions live in memory.</b> Restart the server and you're logged out.</li>
+        <li><b>Titles beat ids for accuracy.</b> A title search takes the first hit, which can
+          be the wrong paper. An arXiv id is exact — prefer it.</li>
+      </ul>
+    </section>
+
+    <section id="architecture">
+      <h2>Architecture</h2>
+      <pre><code> Browser (index.html · vanilla JS + Cytoscape)   Admin (admin.html)   Docs (docs.html)
+        │  fetch / JSON                                │                    │
+        ▼                                              ▼                    ▼
+ ┌────────────────────── server.py (stdlib ThreadingHTTPServer) ─────────────────────┐
+ │  GET  / /admin /system /docs /docs.pdf /health /api/config /api/admin/status      │
+ │  POST /api/analyze /api/extract /api/expand /api/admin/*                          │
+ └───────┬───────────────────┬──────────────────┬───────────────────┬────────────────┘
+         ▼                   ▼                  ▼                   ▼
+  graph_builder.py     pdf_extract.py       config.py          (admin auth)
+  normalize/build/     (pypdf → id/title)   config.json,
+  expand · MODES                            PBKDF2, sessions
+         │ uses
+         ▼
+  sources.py  ──►  cache.py (30-day disk cache)
+  (S2 client;  ──►  Semantic Scholar Graph API  ──►  arXiv links
+   caps + sorting)</code></pre>
+      <div class="tblwrap"><table>
+        <tr><th>File</th><th>Job</th></tr>
+        <tr><td><code>backend/server.py</code></td><td>Routing, cookie sessions, config
+          validation entry point. No framework.</td></tr>
+        <tr><td><code>backend/graph_builder.py</code></td><td>The core.
+          <code>normalize()</code> validates configs; <code>_fetch()</code> is the pipeline;
+          <code>build()</code> merges seeds; <code>expand()</code> grows.</td></tr>
+        <tr><td><code>backend/sources.py</code></td><td>S2 client. Owns
+          <code>MAX_LIMIT</code>, <code>sort_papers()</code>, throttling, backoff, graceful
+          429s.</td></tr>
+        <tr><td><code>backend/cache.py</code></td><td>Disk JSON cache, 30-day TTL,
+          best-effort (never fails a request).</td></tr>
+        <tr><td><code>backend/config.py</code></td><td><code>VERSION</code>, config.json,
+          PBKDF2 auth, sessions, stats.</td></tr>
+        <tr><td><code>backend/pdf_extract.py</code></td><td>pypdf → arXiv id or title.</td></tr>
+        <tr><td><code>frontend/index.html</code></td><td>The app: tabs, controls, graph,
+          filters, expand, export.</td></tr>
+        <tr><td><code>frontend/docs.html</code></td><td>This page.</td></tr>
+      </table></div>
+    </section>
+
+    <section id="pipeline">
+      <h2>The fetch pipeline</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        The order these four steps happen in is the difference between "give me 40 references"
+        meaning 40, and it meaning 4.
+      </div>
+      <pre><code>POOL  ──►  arXiv FILTER  ──►  SORT  ──►  TRIM to your limit
+ ▲                                          ▲
+ always the API's max                       your limit applies HERE, last</code></pre>
+      <div class="warn"><div class="tlabel">Prior behaviour</div>
+        v1.0 asked the API for exactly your limit and <i>then</i> dropped the non-arXiv
+        results: a request for 40 references returned 40 rows, most of which were then
+        discarded by the arXiv filter, leaving a handful on screen. The limit was spent on
+        records that were about to be thrown away. Filtering before trimming means a request
+        for 40 now yields up to 40 <i>arXiv</i> references — every one the paper has.
+      </div>
+      <div class="tech"><div class="tlabel">Why the pool is always the maximum</div>
+        Two reasons, both free wins:
+        <ul>
+          <li>A big fetch costs the <b>same single HTTP call</b> as a small one — only bytes
+            differ, and rate limits count calls. A typical complete reference list is well
+            under 0.1 MB; a full 1000-row pool with abstracts is a few megabytes.</li>
+          <li>A constant pool size means a <b>constant cache key</b>. Your limit is applied
+            after the cache, so changing it re-slices cached data with <b>zero</b> API calls.</li>
+        </ul>
+        Implementation: <code>graph_builder.POOL</code> mirrors <code>sources.MAX_LIMIT</code>;
+        <code>_fetch()</code> does pool → filter → <code>sort_papers()</code> →
+        <code>[:limit]</code>. A limit of <code>0</code> short-circuits before any request.
+      </div>
+    </section>
+
+    <section id="api">
+      <h2>HTTP API</h2>
+      <div class="tblwrap"><table>
+        <tr><th>Method · Path</th><th>Purpose</th></tr>
+        <tr><td>GET <code>/</code> <code>/admin</code> <code>/system</code> <code>/docs</code></td>
+            <td>The four pages</td></tr>
+        <tr><td>GET <code>/docs.pdf</code></td><td>This documentation as a PDF</td></tr>
+        <tr><td>GET <code>/health</code></td><td><code>{ok:true}</code></td></tr>
+        <tr><td>GET <code>/api/config</code></td>
+            <td><code>{version, released, has_key, default_mode, is_setup, max_limits,
+            sorts, presets}</code></td></tr>
+        <tr><td>POST <code>/api/analyze?mode=</code></td>
+            <td>Build a graph. JSON body, or a raw PDF with
+            <code>Content-Type: application/pdf</code></td></tr>
+        <tr><td>POST <code>/api/extract</code></td><td>Raw PDF → <code>{arxiv_id, title}</code></td></tr>
+        <tr><td>POST <code>/api/expand</code></td><td><code>{id, type}</code> → new nodes/edges</td></tr>
+        <tr><td>POST <code>/api/admin/*</code></td>
+            <td><code>setup</code>, <code>login</code>, <code>logout</code>, <code>apikey</code>,
+            <code>settings</code>, <code>password</code>, <code>clear-cache</code></td></tr>
+      </table></div>
+      <h3>The analyze body</h3>
+      <pre><code>POST /api/analyze
+{
+  "seeds": [ {"arxiv_id": "1301.3781"}, {"query": "attention is all you need"} ],
+  "config": {
+    "refs":    {"limit": 40, "sort": "citations"},    // max 1000
+    "similar": {"limit": 15, "sort": "default"},      // max 500
+    "authors": {"enabled": true, "scope": "all", "per_paper": 8},
+    "second_hop": 0                                   // max 25
+  }
+}
+
+// sort: "citations" | "year_desc" | "year_asc" | "default"
+// Omit "config" entirely to use the ?mode= preset (quick | deep | complex).</code></pre>
+      <div class="tech"><div class="tlabel">Validation contract</div>
+        Every field is optional and every value is clamped, so the endpoint is safe to poke at.
+        Over-max clamps down; negatives clamp to 0; non-numeric falls back to the preset's
+        value; an unknown <code>sort</code> is ignored in favour of the default. Errors: <b>400</b> no usable seed, <b>422</b> nothing resolvable (or a total
+        rate-limit failure), <b>200</b> with a <code>meta.warnings</code> array for partial
+        results. The response echoes the fully-resolved config at
+        <code>meta.config</code> — so you can always see exactly what ran.
+      </div>
+    </section>
+
+    <section id="cache">
+      <h2>Cache &amp; rate limits</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        Every answer from Semantic Scholar is saved to disk for 30 days. Papers you've already
+        looked at load instantly and don't touch the network. This is what makes the tool
+        comfortable to use for free.
+      </div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        <code>cache.py</code>: key is a SHA-256 of URL + params, stored as JSON under
+        <code>LITGRAPH_DATA_DIR/.cache/</code>, 30-day TTL, written atomically via temp +
+        <code>os.replace</code>. Writes are best-effort and never fail a request. Throttling in
+        <code>sources.py</code> is a process-wide lock: <b>0.4 s</b> between calls with an API
+        key, <b>1.2 s</b> without. On 429/502/503/504 it retries up to 5 times with a 1.8×
+        backoff from 3 s. Persistent 429 sets <code>rate_limited</code>, appends a warning and
+        returns partial results — <b>422</b> only if nothing at all resolved. It never 500s on
+        a rate limit.
+      </div>
+      <p>No API key is needed. A free key from
+      <a href="https://www.semanticscholar.org/product/api" target="_blank">semanticscholar.org/product/api</a>
+      raises the limits and can be pasted into <a href="/admin">Admin</a>, or set as
+      <code>S2_API_KEY</code>.</p>
+    </section>
+
+    <section id="auth">
+      <h2>Auth &amp; admin</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        The first time you open <b>/admin</b> you set a password. After that it protects your
+        API key, the default depth, and the cache controls.
+      </div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        PBKDF2-HMAC-SHA256, 200,000 iterations, 16-byte random salt, compared with
+        <code>secrets.compare_digest</code>. Login mints a
+        <code>secrets.token_urlsafe(24)</code> session in an <b>HttpOnly</b>,
+        <b>SameSite=Lax</b> cookie with an 8-hour TTL. Sessions are in-memory and cleared on
+        restart. The key and password hash live in <code>config.json</code> inside
+        <code>LITGRAPH_DATA_DIR</code> (<code>backend/</code> by default), which is
+        gitignored. <code>/api/config</code> exposes only a <code>has_key</code> boolean; the
+        key itself is only ever returned masked, to an authenticated session.
+      </div>
+    </section>
+
+    <section id="run">
+      <h2>Running it</h2>
+      <pre><code># One-time setup
+pip install -r requirements.txt   # requests, pypdf — that's the lot
+
+# Run it
+python backend/server.py          # -> http://localhost:8000
+                                  # (or double-click run.bat on Windows)
+
+# Rebuild this documentation PDF after editing docs.html
+python tools/build_docs_pdf.py    # needs playwright (dev-only, not a runtime dep)</code></pre>
+      <p>Stop it with <b>Ctrl+C</b>. Try <code>1301.3781</code>, <code>1706.03762</code> or
+      <code>1810.04805</code>.</p>
+      <div class="tech"><div class="tlabel">Data location</div>
+        <code>config.json</code> (admin password hash + API key) and the response cache sit in
+        <code>backend/</code> by default, and both are gitignored. Set
+        <code>LITGRAPH_DATA_DIR</code> to move them somewhere else — useful if you want the
+        code on a different disk to the data, or a shared cache between checkouts. Delete
+        <code>config.json</code> to reset first-run setup. Set a port with
+        <code>PORT</code>.
+      </div>
+      <div class="tech"><div class="tlabel">About this PDF</div>
+        <code>/docs.pdf</code> is a static artifact built from this page by headless Chromium,
+        so the server keeps its two-dependency diet rather than shipping a PDF engine. It is
+        <b>not</b> regenerated automatically — edit <code>docs.html</code> and re-run the
+        script, or the PDF will drift out of date.
+      </div>
+    </section>
+
+    <section id="licensing">
+      <h2>Data &amp; licensing</h2>
+      <div class="plain"><div class="tlabel">In plain English</div>
+        LitGraph doesn't own any of the paper data — it borrows it from Semantic
+        Scholar every time you run a search. That means two things: you need your own
+        free API key, and the credit line on the graph ("Paper data from Semantic
+        Scholar") has to stay where it is.
+      </div>
+      <div class="tblwrap"><table>
+        <tr><th>Resource</th><th>Link</th></tr>
+        <tr><td>API product page &amp; key request</td>
+            <td><a href="https://www.semanticscholar.org/product/api" target="_blank" rel="noopener">semanticscholar.org/product/api</a></td></tr>
+        <tr><td>Academic Graph API reference</td>
+            <td><a href="https://api.semanticscholar.org/api-docs/graph" target="_blank" rel="noopener">api.semanticscholar.org/api-docs/graph</a></td></tr>
+        <tr><td>Recommendations API reference</td>
+            <td><a href="https://api.semanticscholar.org/api-docs/recommendations" target="_blank" rel="noopener">api.semanticscholar.org/api-docs/recommendations</a></td></tr>
+        <tr><td>Tutorial</td>
+            <td><a href="https://www.semanticscholar.org/product/api/tutorial" target="_blank" rel="noopener">semanticscholar.org/product/api/tutorial</a></td></tr>
+        <tr><td><b>API License Agreement</b></td>
+            <td><a href="https://www.semanticscholar.org/product/api/license" target="_blank" rel="noopener">semanticscholar.org/product/api/license</a></td></tr>
+      </table></div>
+      <div class="warn"><div class="tlabel">Attribution is a licence condition</div>
+        The API License Agreement requires an attribution to "Semantic Scholar" on the
+        site using it. LitGraph shows one in the graph legend. <b>It must not be
+        removed.</b>
+      </div>
+      <div class="tech"><div class="tlabel">Technical</div>
+        Endpoints used, requested fields, the published rate limits LitGraph is
+        engineered against, caching policy, third-party component licences, and the
+        licence terms in full — including the <b>CC BY-NC</b> exposure that applies to
+        commercial deployment — are documented in <code>DATA-AND-LICENSING.md</code>
+        in the repository. Operators supply their own key; none is bundled.
+      </div>
+      <p style="color:var(--muted);font-size:12.5px">LitGraph is not affiliated with,
+      endorsed by, or sponsored by the Allen Institute for Artificial Intelligence,
+      Semantic Scholar, or arXiv.</p>
+    </section>
+
+    <section id="changelog">
+      <h2>Changelog</h2>
+      <h3>v2.0 — 2026-07-15 <span class="pill new">current</span></h3>
+      <ul>
+        <li><b>Added</b> per-source limits, capped at the API's verified real ceilings.</li>
+        <li><b>Added</b> priority: most cited / newest / oldest / API order.</li>
+        <li><b>Added</b> a References toggle — v1.0 had one for everything else.</li>
+        <li><b>Added</b> this documentation page, plus its PDF, and a real version number.</li>
+        <li><b>Fixed</b> limits being spent before the arXiv filter ran — "40 references"
+          could yield 4. Pipeline is now pool → filter → sort → trim.</li>
+        <li><b>Fixed</b> toggles stranding orphan dots, and being unable to hide references at
+          all. Filtering is now edge-driven.</li>
+        <li><b>Fixed</b> pasted arXiv ids being rejected in every shape but one.
+          <code>1706.03762v7</code> (the arXiv filename), <code>arXiv:1706.03762</code> (what
+          the paper stamps on itself), a pasted <code>arxiv.org/abs/…</code> URL, or an id with
+          a stray space all returned "could not identify this paper". Now all fold to the
+          same id, and a "title" that's really an id is recognised as one.</li>
+        <li><b>Fixed</b> a 500 when a paper's reference list came back <code>null</code> —
+          <code>.get("data", [])</code> returns <code>None</code> when the key exists and is
+          null, so the default never applied and the loop crashed.</li>
+        <li><b>Fixed</b> a corrupt or empty upload returning a 500 stack trace. It's a 422
+          with a readable message now.</li>
+        <li><b>Fixed</b> JSON export leaking an internal <code>_expanded</code> UI flag into
+          every exported node.</li>
+        <li><b>Fixed</b> similar papers returning no or irrelevant results — the
+          recommendations service was left to default to its <i>recent-papers</i> pool, which returned
+          <b>no results at all</b> for some well-known papers and uncited preprints for
+          others.
+          Now drawn from the whole corpus (<a href="#simcorpus">detail</a>).</li>
+        <li><b>Fixed</b> PDF title detection selecting the longest line rather than the
+          largest, so a paper carrying a licence banner or notice above its title had the
+          banner extracted as the title. Detection now uses font size, and ligatures are
+          normalised.</li>
+        <li><b>Changed</b> limit changes now re-slice the cache instead of hitting the network.</li>
+        <li><b>Removed</b> citing papers — <a href="#nociting">reasons</a>.</li>
+        <li><b>Removed</b> Docker packaging (Dockerfile, compose file, .dockerignore). It's a
+          two-dependency Python app; <code>pip install</code> and <code>python
+          backend/server.py</code> is the whole story now.</li>
+      </ul>
+      <h3>v1.0</h3>
+      <ul>
+        <li>Interactive Cytoscape graph; references, citing papers, similar papers, authors.</li>
+        <li>Three fixed depth presets; PDF upload; batching; node expansion.</li>
+        <li>Admin panel, disk cache, system map, guided tour, PNG/JSON export.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<div class="foot">
+  LitGraph v<span id="vfoot">2.0</span> · Created by <b style="color:var(--text)">Shreyan Kundu</b> ·
+  Data from <a href="https://api.semanticscholar.org" target="_blank">Semantic Scholar</a> ·
+  <a href="/docs.pdf" download="LitGraph-Documentation.pdf">PDF</a> · <a href="/system">System map</a> · <a href="/">App</a>
+</div>
+
+<script>
+// Voice switch — the print stylesheet overrides it so the PDF always has both.
+const body=document.body;
+document.querySelectorAll("#voice button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#voice button").forEach(x=>x.classList.toggle("on",x===b));
+  body.classList.remove("simple","techonly");
+  if(b.dataset.v==="simple") body.classList.add("simple");
+  if(b.dataset.v==="tech")   body.classList.add("techonly");
+  try{ localStorage.setItem("lg_docs_voice",b.dataset.v); }catch(e){}
+}));
+try{
+  const v=localStorage.getItem("lg_docs_voice");
+  if(v&&v!=="both"){ const b=document.querySelector(`#voice button[data-v="${v}"]`); if(b) b.click(); }
+}catch(e){}
+
+// Version comes from the server so this page can't claim a version the code isn't.
+fetch("/api/config").then(r=>r.json()).then(c=>{
+  if(!c.version) return;
+  document.getElementById("vtag").textContent="v"+c.version;
+  document.getElementById("vline").textContent=c.version;
+  document.getElementById("vfoot").textContent=c.version;
+  if(c.released) document.getElementById("rline").textContent=c.released;
+}).catch(()=>{});
+
+// Highlight the section you're reading in the sidebar.
+const links=[...document.querySelectorAll("#toc a")];
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(!e.isIntersecting) return;
+    links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+e.target.id));
+  });
+},{rootMargin:"-70px 0px -70% 0px"});
+document.querySelectorAll("section[id]").forEach(s=>spy.observe(s));
+</script>

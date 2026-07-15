@@ -1,0 +1,589 @@
+<title>LitGraph — Graphical Literature Survey</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Shreyan Kundu">
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/layout-base@2.0.1/layout-base.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cose-base@2.2.0/cose-base.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#26303d; --text:#e6edf3; --muted:#8b98a5;
+    --main:#f2a900; --paper:#58a6ff; --similar:#bc8cff; --author:#3fb950;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:var(--bg);color:var(--text)}
+  #app{display:flex;flex-direction:column;height:100%}
+  header{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:9px 14px;
+    background:var(--panel);border-bottom:1px solid var(--border);z-index:5}
+  header h1{font-size:16px;margin:0 8px 0 0;font-weight:800}
+  header h1 span{color:var(--main)}
+  .sep{width:1px;height:24px;background:var(--border);margin:0 3px}
+  input,select,button{background:#0d1117;color:var(--text);border:1px solid var(--border);
+    border-radius:7px;padding:7px 10px;font-size:13px}
+  input[type=text]{width:200px}
+  button{cursor:pointer;font-weight:600}
+  button.primary{background:var(--main);color:#1a1200;border-color:var(--main)}
+  button.icon{padding:7px 9px}
+  button:disabled{opacity:.5;cursor:default}
+  .file-label{border:1px dashed var(--border);border-radius:7px;padding:7px 10px;
+    cursor:pointer;font-size:13px;color:var(--muted)}
+  .file-label.has{color:var(--paper);border-color:var(--paper)}
+  .spacer{flex:1}
+  #status{color:var(--muted);font-size:12px;margin-left:4px}
+  .spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--main);
+    border-radius:50%;display:inline-block;animation:spin .8s linear infinite;vertical-align:-2px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #banner{display:none;gap:10px;align-items:center;background:#2a2410;color:#e8d9a0;
+    border-bottom:1px solid #4a3f16;padding:7px 14px;font-size:12.5px}
+  #banner a{color:var(--main);font-weight:700}
+  #banner .x{margin-left:auto;cursor:pointer;color:#b7a86a}
+  /* how much of each source to fetch, and what counts as most important */
+  #controls{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:10px 14px;
+    background:#12171e;border-bottom:1px solid var(--border)}
+  .ctl-group{display:flex;gap:8px;align-items:flex-end;padding-right:14px;
+    border-right:1px solid var(--border)}
+  .ctl-group:last-child{border-right:none;padding-right:0}
+  .ctl-group .gname{font-size:11.5px;color:var(--text);font-weight:700;padding-bottom:8px}
+  .ctl{display:flex;flex-direction:column;gap:4px}
+  .ctl label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--muted);font-weight:700}
+  .ctl input[type=number]{width:74px}
+  .ctl select{padding:6px 8px}
+  .ctl .cap{font-size:9.5px;color:#6b7683;font-weight:400;text-transform:none;letter-spacing:0}
+  #traybar{display:none;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 14px;
+    background:#12171e;border-bottom:1px solid var(--border)}
+  #traybar .lbl{font-size:12px;color:var(--muted);font-weight:700}
+  .seedchip{display:inline-flex;align-items:center;gap:7px;background:#0d1117;
+    border:1px solid var(--border);border-radius:16px;padding:4px 11px;font-size:12px;
+    max-width:250px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .seedchip b{cursor:pointer;color:var(--muted);font-weight:700}
+  .seedchip b:hover{color:#f85149}
+  #main{flex:1;display:flex;min-height:0;position:relative}
+  #cy{flex:1;min-width:0}
+  #side{width:340px;background:var(--panel);border-left:1px solid var(--border);
+    overflow-y:auto;padding:16px;font-size:13px;line-height:1.5}
+  #side h2{font-size:15px;margin:.2em 0}
+  #side .muted{color:var(--muted)} #side a{color:var(--paper)}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:8px}
+  .legend{position:absolute;left:14px;bottom:14px;background:rgba(22,27,34,.9);
+    border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12px}
+  .legend .row{display:flex;align-items:center;gap:8px;margin:3px 0}
+  .legend .attrib{margin-top:8px;padding-top:7px;border-top:1px solid var(--border);
+    font-size:10.5px;color:var(--muted)}
+  .legend .attrib a{color:var(--muted);text-decoration:underline}
+  .legend .attrib a:hover{color:var(--paper)}
+  .dot{width:12px;height:12px;border-radius:50%}
+  /* anchored to #main, so the tab/control bars can grow without shunting these */
+  .toggles{position:absolute;right:354px;top:14px;background:rgba(22,27,34,.9);
+    border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:12px;z-index:2}
+  .toggles label{display:block;margin:4px 0;cursor:pointer}
+  .empty{color:var(--muted);text-align:center;margin-top:12vh;font-size:14px}
+  .chips{margin-top:16px;text-align:left}
+  .chips h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 6px}
+  .credit{margin-top:26px;font-size:11px;color:var(--muted);opacity:.85}
+  .credit b{color:var(--text);font-weight:700}
+  #brandCredit{font-size:10px;color:var(--muted);margin-left:-4px;margin-right:6px;align-self:flex-end}
+  .chip{display:block;width:100%;text-align:left;background:#0d1117;border:1px solid var(--border);
+    border-radius:8px;padding:7px 10px;margin:5px 0;font-size:12px;color:var(--text);cursor:pointer}
+  .chip:hover{border-color:var(--paper)}
+  .expandBtn{margin-top:16px;width:100%;background:var(--main);color:#1a1200;
+    border:1px solid var(--main);border-radius:8px;padding:10px;font-size:13px;
+    font-weight:700;cursor:pointer}
+  .expandBtn:hover{filter:brightness(1.06)}
+  .expandBtn:disabled{background:#12331c;color:#3fb950;border-color:#1c4a28;cursor:default;filter:none}
+  /* tour */
+  #tourOverlay{position:fixed;inset:0;z-index:50;display:none}
+  #tourSpot{position:absolute;border-radius:10px;box-shadow:0 0 0 9999px rgba(4,7,12,.78);
+    transition:all .25s ease;pointer-events:none}
+  #tourTip{position:absolute;max-width:300px;background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  #tourTip h3{margin:0 0 6px;font-size:15px}
+  #tourTip p{margin:0 0 14px;font-size:13px;color:#c9d4e0;line-height:1.5}
+  #tourTip .nav{display:flex;align-items:center;gap:8px}
+  #tourTip .dots{display:flex;gap:5px;margin-right:auto}
+  #tourTip .d{width:7px;height:7px;border-radius:50%;background:var(--border)}
+  #tourTip .d.on{background:var(--main)}
+  #tourTip .skip{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px}
+</style>
+
+<div id="app">
+  <header>
+    <h1>Lit<span>Graph</span></h1>
+    <span id="brandCredit" title="Creator">by Shreyan Kundu</span>
+    <label class="file-label" id="fileLabel">📄 Upload PDF(s)
+      <input id="file" type="file" accept="application/pdf" multiple style="display:none"></label>
+    <span class="muted">or</span>
+    <input id="arxiv" type="text" placeholder="arXiv id or paper title">
+    <button id="addBtn" class="icon" title="Add to batch (analyze several papers together)">＋ Add</button>
+    <select id="mode" title="Load a preset into the controls below">
+      <option value="quick">Quick</option>
+      <option value="deep" selected>Deep Research</option>
+      <option value="complex">Complex</option>
+    </select>
+    <button id="go" class="primary">Analyze</button>
+    <span class="sep"></span>
+    <input id="nodeSearch" type="text" placeholder="🔍 find a node" style="width:150px;display:none">
+    <button id="toolFit" class="icon" title="Fit to view" style="display:none">⤢</button>
+    <button id="toolPng" class="icon" title="Export PNG" style="display:none">🖼 PNG</button>
+    <button id="toolJson" class="icon" title="Export JSON" style="display:none">⤓ JSON</button>
+    <span id="status"></span>
+    <span class="spacer"></span>
+    <button id="docsBtn" class="icon" title="Documentation — how this works & what it can't do"
+            onclick="location.href='/docs'">📖 Docs</button>
+    <button id="tourBtn" class="icon" title="Take the tour">?</button>
+    <button id="gearBtn" class="icon" title="Admin & settings" onclick="location.href='/admin'">⚙</button>
+  </header>
+
+  <div id="controls"></div>
+
+  <div id="traybar"></div>
+
+  <div id="banner">
+    <span>⚡ Running on the free anonymous API — you may hit occasional rate limits.
+      Add a free key in <a href="/admin">Admin</a> to remove them.</span>
+    <span class="x" onclick="dismissBanner()">✕</span>
+  </div>
+
+  <div id="main">
+    <div id="cy"></div>
+
+    <div class="legend">
+      <div class="row"><span class="dot" style="background:var(--main)"></span> Seed paper</div>
+      <div class="row"><span class="dot" style="background:var(--paper)"></span> Referenced paper</div>
+      <div class="row"><span class="dot" style="background:var(--similar)"></span> Similar arXiv paper</div>
+      <div class="row"><span class="dot" style="background:var(--author)"></span> Author</div>
+      <!-- Required by the Semantic Scholar API licence, which obliges an attribution
+           to "Semantic Scholar" on the site. Do not remove. -->
+      <div class="attrib">Paper data from
+        <a href="https://www.semanticscholar.org/product/api" target="_blank"
+           rel="noopener">Semantic Scholar</a></div>
+    </div>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="tRefs" checked> References</label>
+      <label><input type="checkbox" id="tSimilar" checked> Similar papers</label>
+      <label><input type="checkbox" id="tAuthors" checked> Authors</label>
+    </div>
+
+    <div id="side">
+      <div class="empty" id="sideEmpty">
+        Upload an arXiv paper (or paste an arXiv id) and hit <b>Analyze</b>.<br><br>
+        You'll get an interactive graph of the paper, the works it cites, similar
+        arXiv papers, and every author — all connected.
+        <div class="chips" id="recentWrap" style="display:none">
+          <h4>Recent</h4><div id="recent"></div>
+        </div>
+        <div class="credit">Created by <b>Shreyan&nbsp;Kundu</b> ·
+          <a href="/docs" style="color:var(--paper)">Read the docs</a></div>
+      </div>
+      <div id="sideContent" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tourOverlay"><div id="tourSpot"></div><div id="tourTip"></div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+let cy,currentGraph=null,seeds=[];
+// Which nodes have been expanded. Kept beside the graph rather than on the nodes:
+// it's UI state, and JSON export copies node data verbatim — parking it there put
+// an "_expanded" flag in every exported file.
+const expandedNodes=new Set();
+
+// ---- limits + priority per source ---------------------------------------------
+// CAPS come from the server, which reads them from the API's real ceilings, so the
+// number inputs can't be pushed past what Semantic Scholar would accept.
+let CAPS={refs:1000,similar:500,authors_per_paper:50,second_hop:25};
+let PRESETS={};
+let cfg={
+  refs:{limit:40,sort:"citations"}, similar:{limit:15,sort:"default"},
+  authors:{enabled:true,scope:"all",per_paper:8}, second_hop:0,
+};
+const SORT_LABELS={citations:"Most cited",year_desc:"Newest first",
+                   year_asc:"Oldest first",default:"Most relevant"};
+
+// ---- boot: config, banner, recents, tour --------------------------------------
+(async function boot(){
+  try{
+    const c=await (await fetch("/api/config")).json();
+    if(c.max_limits) CAPS=c.max_limits;
+    if(c.presets) PRESETS=c.presets;
+    if(c.default_mode) $("#mode").value=c.default_mode;
+    loadPreset($("#mode").value);
+    if(!c.has_key && localStorage.getItem("lg_banner")!=="off") $("#banner").style.display="flex";
+  }catch(e){}
+  renderControls();
+  renderRecents();
+  if(!localStorage.getItem("lg_tour_done")) setTimeout(()=>startTour(),500);
+})();
+
+function loadPreset(name){
+  const p=PRESETS[name];
+  if(!p) return;
+  cfg=JSON.parse(JSON.stringify(p));
+  renderControls();
+}
+
+function clampNum(inp){
+  let v=parseInt(inp.value,10);
+  if(isNaN(v)) v=0;
+  v=Math.max(parseInt(inp.min,10), Math.min(v, parseInt(inp.max,10)));
+  inp.value=v;
+  return v;
+}
+function sortOpts(sel){
+  return Object.entries(SORT_LABELS).map(([v,l])=>
+    `<option value="${v}"${sel===v?" selected":""}>${l}</option>`).join("");
+}
+function numCtl(label,path,val,cap){
+  return `<div class="ctl"><label>${label} <span class="cap">max ${cap}</span></label>
+    <input type="number" min="0" max="${cap}" value="${val}" data-cfg="${path}"></div>`;
+}
+function srcGroup(name,key){
+  return `<div class="ctl-group"><div class="gname">${name}</div>
+    ${numCtl("Limit",key+".limit",cfg[key].limit,CAPS[key])}
+    <div class="ctl"><label>Priority</label>
+      <select data-cfg="${key}.sort">${sortOpts(cfg[key].sort)}</select></div></div>`;
+}
+function renderControls(){
+  $("#controls").innerHTML=
+    srcGroup("References","refs")
+    + srcGroup("Similar","similar")
+    + `<div class="ctl-group"><div class="gname">Authors</div>
+        ${numCtl("Per paper","authors.per_paper",cfg.authors.per_paper,CAPS.authors_per_paper)}
+        <div class="ctl"><label>From</label><select data-cfg="authors.scope">
+          <option value="all"${cfg.authors.scope==="all"?" selected":""}>Every paper</option>
+          <option value="main"${cfg.authors.scope==="main"?" selected":""}>Seed only</option>
+        </select></div></div>`
+    + `<div class="ctl-group"><div class="gname">2nd hop</div>
+        ${numCtl("Top refs to expand","second_hop",cfg.second_hop,CAPS.second_hop)}</div>`;
+  $("#controls").querySelectorAll("[data-cfg]").forEach(inp=>{
+    inp.addEventListener("change",()=>{
+      const v=inp.type==="number"?clampNum(inp):inp.value;
+      const p=inp.dataset.cfg.split(".");
+      if(p.length===1) cfg[p[0]]=v; else cfg[p[0]][p[1]]=v;
+    });
+  });
+}
+$("#mode").addEventListener("change",()=>loadPreset($("#mode").value));
+function dismissBanner(){ $("#banner").style.display="none"; localStorage.setItem("lg_banner","off"); }
+
+$("#file").addEventListener("change",async e=>{
+  const files=[...e.target.files]; e.target.value="";
+  for(const f of files){
+    setStatus('<span class="spinner"></span> Reading '+esc(f.name)+'…');
+    try{
+      const d=await (await fetch("/api/extract",{method:"POST",
+        headers:{"Content-Type":"application/pdf"},body:f})).json();
+      const seed=d.arxiv_id?{arxiv_id:d.arxiv_id}:(d.title?{query:d.title}:null);
+      const label=d.title||(d.arxiv_id?"arXiv:"+d.arxiv_id:f.name);
+      if(seed){ seed.label=label; seeds.push(seed); }
+      else setStatus("⚠ Couldn't read a paper from "+esc(f.name));
+    }catch(err){ setStatus("⚠ "+err.message); }
+  }
+  renderTray(); setStatus("");
+});
+$("#go").addEventListener("click",()=>analyze());
+$("#addBtn").addEventListener("click",addSeed);
+$("#arxiv").addEventListener("input",updateGoLabel);
+$("#arxiv").addEventListener("keydown",e=>{ if(e.key==="Enter")analyze(); });
+["tRefs","tAuthors","tSimilar"].forEach(id=>$("#"+id).addEventListener("change",applyFilters));
+$("#tourBtn").addEventListener("click",startTour);
+$("#toolFit").addEventListener("click",()=>cy&&cy.fit(undefined,40));
+$("#toolPng").addEventListener("click",exportPng);
+$("#toolJson").addEventListener("click",exportJson);
+$("#nodeSearch").addEventListener("input",searchNode);
+function setStatus(h){ $("#status").innerHTML=h; }
+
+// ---- batch tray ---------------------------------------------------------------
+// Mirrors clean_arxiv_id() in sources.py. All of these mean 1706.03762:
+//   1706.03762 · 1706.03762v7 · arXiv:1706.03762 · https://arxiv.org/abs/1706.03762
+// The version suffix is the one that matters — it's what the arXiv filename and the
+// paper's own first-page stamp use, so it's what people copy.
+const ARXIV_RE=/^\s*(?:(?:https?:\/\/)?(?:www\.)?arxiv\.org\/(?:abs|pdf)\/)?(?:arxiv[:\s]\s*)?(\d{4}\.\d{4,5})(?:v\d+)?(?:\.pdf)?\s*\/?\s*$/i;
+function asArxivId(v){ const m=ARXIV_RE.exec(v||""); return m?m[1]:null; }
+function asSeed(v){
+  const id=asArxivId(v);
+  return id?{arxiv_id:id,label:"arXiv:"+id}:{query:v,label:v};
+}
+function addSeed(){
+  const v=$("#arxiv").value.trim(); if(!v) return;
+  seeds.push(asSeed(v));
+  $("#arxiv").value=""; renderTray();
+}
+function renderTray(){
+  const bar=$("#traybar");
+  if(!seeds.length){ bar.style.display="none"; bar.innerHTML=""; updateGoLabel(); return; }
+  bar.style.display="flex";
+  bar.innerHTML=`<span class="lbl">Batch (${seeds.length}):</span>`
+    +seeds.map((s,i)=>`<span class="seedchip" title="${esc(s.label)}">${esc(s.label)} <b data-i="${i}">✕</b></span>`).join("")
+    +`<button class="icon" id="clearSeeds">Clear all</button>`;
+  bar.querySelectorAll("b[data-i]").forEach(b=>b.onclick=()=>{ seeds.splice(+b.dataset.i,1); renderTray(); });
+  $("#clearSeeds").onclick=()=>{ seeds=[]; renderTray(); };
+  updateGoLabel();
+}
+function updateGoLabel(){
+  const n=seeds.length+($("#arxiv").value.trim()?1:0);
+  $("#go").textContent=n>1?`Analyze (${n})`:"Analyze";
+}
+
+// ---- analyze (one or many) ----------------------------------------------------
+async function analyze(seedOverride){
+  const mode=$("#mode").value;
+  let batch;
+  const sent={...cfg};
+  if(seedOverride){ batch=[seedOverride]; }
+  else{
+    batch=seeds.map(s=>({arxiv_id:s.arxiv_id,query:s.query,title:s.title}));
+    const v=$("#arxiv").value.trim();
+    if(v){ const s=asSeed(v); batch.push({arxiv_id:s.arxiv_id,query:s.query}); }
+  }
+  if(!batch.length){ setStatus("⚠ Add at least one paper (arXiv id, title, or PDF)."); return; }
+  $("#go").disabled=true;
+  setStatus('<span class="spinner"></span> Fetching citation & author data for '+batch.length+' paper(s)…');
+  try{
+    const resp=await fetch(`/api/analyze?mode=${mode}`,{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({seeds:batch,config:sent})});
+    const data=await resp.json();
+    if(!resp.ok){ setStatus("⚠ "+(data.error||"Failed")); $("#go").disabled=false; return; }
+    currentGraph=data; render(data);
+    const m=data.meta;
+    setStatus(`✓ ${m.seed_count} seed(s) · ${m.paper_count} papers · ${m.author_count} authors`
+      +(m.warnings&&m.warnings.length?" · "+m.warnings.join(" "):""));
+    if(m.seed_count===1){ const s0=batch[0]||{}; pushRecent(s0.arxiv_id||null,(m.seeds&&m.seeds[0])||s0.query); }
+    ["#nodeSearch","#toolFit","#toolPng","#toolJson"].forEach(s=>$(s).style.display="");
+    $("#arxiv").value=""; updateGoLabel();
+  }catch(err){ setStatus("⚠ "+err.message); }
+  $("#go").disabled=false;
+}
+
+// ---- recents ------------------------------------------------------------------
+function pushRecent(arxiv,title){
+  let r=JSON.parse(localStorage.getItem("lg_recent")||"[]");
+  r=r.filter(x=>x.arxiv!==arxiv||!arxiv); r.unshift({arxiv,title}); r=r.slice(0,6);
+  localStorage.setItem("lg_recent",JSON.stringify(r)); renderRecents();
+}
+function renderRecents(){
+  const r=JSON.parse(localStorage.getItem("lg_recent")||"[]");
+  $("#recentWrap").style.display=r.length?"block":"none";
+  $("#recent").innerHTML=r.map((x,i)=>`<button class="chip" data-i="${i}">${esc(x.title||x.arxiv)}</button>`).join("");
+  $("#recent").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+    const x=r[b.dataset.i];
+    if(x.arxiv){ $("#arxiv").value=x.arxiv; analyze({arxiv_id:x.arxiv}); }
+    else analyze({query:x.title});
+  });
+}
+
+// ---- export -------------------------------------------------------------------
+function download(href,name){ const a=document.createElement("a");a.href=href;a.download=name;a.click(); }
+function exportPng(){ if(cy) download(cy.png({full:true,scale:2,bg:"#0d1117"}),"litgraph.png"); }
+function exportJson(){ if(currentGraph) download(
+  URL.createObjectURL(new Blob([JSON.stringify(currentGraph,null,2)],{type:"application/json"})),"litgraph.json"); }
+function searchNode(){
+  if(!cy) return; const q=$("#nodeSearch").value.trim().toLowerCase();
+  if(!q) return;
+  const hit=cy.nodes().filter(n=>(n.data("label")||"").toLowerCase().includes(q))[0];
+  if(hit){ cy.animate({center:{eles:hit},zoom:1.3},{duration:350}); showDetails(hit); }
+}
+
+// ---- graph render (Cytoscape) -------------------------------------------------
+function render(g){
+  const elements=[...g.nodes,...g.edges];
+  expandedNodes.clear();          // a fresh graph has nothing expanded yet
+  if(cy) cy.destroy();
+  cy=cytoscape({container:$("#cy"),elements,
+    style:[
+      {selector:"node",style:{"label":"data(label)","font-size":8,"color":"#c9d4e0",
+        "text-wrap":"wrap","text-max-width":90,"text-valign":"bottom","text-margin-y":3,
+        "min-zoomed-font-size":7}},
+      {selector:'node[type="paper"]',style:{"background-color":"#58a6ff",
+        "width":"mapData(citationCount,0,2000,14,52)","height":"mapData(citationCount,0,2000,14,52)"}},
+      {selector:'node[type="similar"]',style:{"background-color":"#bc8cff","width":22,"height":22}},
+      {selector:'node[type="main"]',style:{"background-color":"#f2a900","width":58,"height":58,
+        "font-size":12,"font-weight":"bold","color":"#fff","border-width":3,"border-color":"#ffd666"}},
+      {selector:'node[type="author"]',style:{"background-color":"#3fb950","shape":"round-rectangle",
+        "width":14,"height":14,"font-size":7}},
+      {selector:"edge",style:{"width":1,"line-color":"#3d4b5c","curve-style":"bezier",
+        "target-arrow-color":"#3d4b5c","target-arrow-shape":"triangle","arrow-scale":.7,"opacity":.55}},
+      {selector:'edge[rel="authored"]',style:{"line-color":"#2a5b34","target-arrow-shape":"none",
+        "opacity":.4,"width":.7}},
+      {selector:'edge[rel="similar"]',style:{"line-color":"#6f4fa0","line-style":"dashed",
+        "target-arrow-shape":"none"}},
+      {selector:".hl",style:{"line-color":"#f2a900","target-arrow-color":"#f2a900","opacity":1,"width":2}},
+      {selector:".faded",style:{"opacity":.08}},
+      {selector:"node.sel",style:{"border-width":3,"border-color":"#fff"}},
+    ],
+    layout:fcose(),wheelSensitivity:.25});
+  cy.on("tap","node",e=>showDetails(e.target));
+  cy.on("tap",e=>{ if(e.target===cy){ clearHighlight(); showEmpty(); }});
+  applyFilters();
+  const main=cy.getElementById(g.main);
+  if(main.length) setTimeout(()=>showDetails(main),150);
+}
+function fcose(randomize=true){ return {name:"fcose",quality:"proof",animate:true,animationDuration:600,randomize,
+  nodeRepulsion:9000,idealEdgeLength:e=>e.data("rel")==="authored"?45:120,nodeSeparation:80,packComponents:true}; }
+
+// Filtering keys off EDGES, not node types. A paper that is both a reference and
+// a similar paper only gets whichever type was written first, so node type can't
+// answer "how is this connected?" — the relationship lives on the edge. We hide
+// edges by rel and then drop any paper nothing links to any more, which is also
+// why unticking a box no longer strands orphan dots.
+function applyFilters(){
+  if(!cy) return;
+  const on={cites:$("#tRefs").checked, similar:$("#tSimilar").checked,
+            authored:$("#tAuthors").checked};
+  const hidden=new Set();
+  const vis={};
+  // Resolve to a fixed point: hiding an edge can strand a paper, and hiding that
+  // paper can in turn strand its author. Settles in 2-3 passes; 6 is just a fuse.
+  const pass=()=>{
+    let changed=false;
+    cy.edges().forEach(e=>{
+      const v=(on[e.data("rel")]!==false)
+        && !hidden.has(e.source().id()) && !hidden.has(e.target().id());
+      if(vis[e.id()]!==v){ vis[e.id()]=v; changed=true; }
+    });
+    cy.nodes().forEach(n=>{
+      if(n.data("type")==="main"||hidden.has(n.id())) return;
+      if(n.data("type")==="author"){
+        if(!on.authored||!n.connectedEdges().some(e=>vis[e.id()])){
+          hidden.add(n.id()); changed=true;
+        }
+        return;
+      }
+      // A paper earns its place through cites/similar — its authors hang off it,
+      // not the other way round. Without this a reference would cling on via its
+      // authored edges after References is unticked. On the Authors tab those are
+      // the ONLY edges a paper has, so fall back to them there.
+      const struct=n.connectedEdges().filter(e=>e.data("rel")!=="authored");
+      const alive=struct.length?struct.some(e=>vis[e.id()])
+                               :n.connectedEdges().some(e=>vis[e.id()]);
+      if(!alive){ hidden.add(n.id()); changed=true; }
+    });
+    return changed;
+  };
+  for(let i=0;i<6&&pass();i++);
+  cy.batch(()=>{
+    cy.nodes().forEach(n=>n.style("display",hidden.has(n.id())?"none":"element"));
+    cy.edges().forEach(e=>e.style("display",vis[e.id()]?"element":"none"));
+  });
+}
+function clearHighlight(){ if(cy) cy.elements().removeClass("hl faded sel"); }
+function showEmpty(){ $("#sideEmpty").style.display="block"; $("#sideContent").style.display="none"; }
+
+function showDetails(node){
+  const d=node.data(); clearHighlight();
+  const nb=node.closedNeighborhood(); cy.elements().addClass("faded");
+  nb.removeClass("faded"); node.connectedEdges().addClass("hl"); node.addClass("sel");
+  const c=$("#sideContent"); $("#sideEmpty").style.display="none"; c.style.display="block";
+  if(d.type==="author"){
+    const papers=node.connectedEdges('[rel="authored"]').connectedNodes('[type!="author"]').map(n=>n.data());
+    c.innerHTML=`<span class="pill" style="background:#12331c;color:#3fb950">AUTHOR</span>
+      <h2>${esc(d.title)}</h2>
+      <div class="muted">${papers.length} paper(s) in this graph — this is how they connect.</div>
+      <ul>${papers.map(p=>`<li><a href="${p.url||'#'}" target="_blank">${esc(p.title)}</a></li>`).join("")}</ul>
+      <a href="${d.url}" target="_blank">Semantic Scholar profile ↗</a>
+      ${expandBtnHtml(node)}`;
+  } else {
+    const kind=d.type==="main"?"SEED PAPER":d.type==="similar"?"SIMILAR":"PAPER";
+    const col=d.type==="main"?"#f2a900":d.type==="similar"?"#bc8cff":"#58a6ff";
+    c.innerHTML=`<span class="pill" style="background:#13233a;color:${col}">${kind}</span>
+      <h2>${esc(d.title)}</h2>
+      <div class="muted">${d.year||"—"} · ${d.citationCount} citations
+        ${d.authors&&d.authors.length?" · "+esc(d.authors.slice(0,6).join(", ")):""}</div>
+      ${d.abstract?`<p>${esc(d.abstract)}${d.abstract.length>=600?"…":""}</p>`:""}
+      <p>${d.arxiv?`<a href="${d.url}" target="_blank">arXiv:${d.arxiv} ↗</a>
+        &nbsp; <a href="${d.pdf}" target="_blank">PDF ↗</a>`
+        :d.url?`<a href="${d.url}" target="_blank">Open ↗</a>`:""}</p>
+      ${expandBtnHtml(node)}`;
+  }
+}
+function expandBtnHtml(node){
+  const id=node.data("id"), t=node.data("type")==="author"?"author":"paper";
+  if(expandedNodes.has(id)) return `<button class="expandBtn" disabled>✓ Expanded</button>`;
+  const label=t==="author"?"＋ Show this author's papers":"＋ Expand research on this paper";
+  return `<button class="expandBtn" onclick="expandNode('${id}','${t}',this)">${label}</button>`;
+}
+async function expandNode(id,type,btn){
+  btn.disabled=true; const orig=btn.textContent; btn.textContent="Expanding…";
+  setStatus('<span class="spinner"></span> Expanding from selected node…');
+  try{
+    const r=await fetch("/api/expand",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({id,type})});
+    const data=await r.json();
+    if(!r.ok||data.error){ setStatus("⚠ "+(data.error||"Failed")); btn.disabled=false; btn.textContent=orig; return; }
+    const added=mergeIntoGraph(data);
+    expandedNodes.add(id);
+    btn.textContent="✓ Expanded";
+    setStatus(added?`✓ Expanded — added ${added} new nodes/edges.`
+      +(data.warnings&&data.warnings.length?" · "+data.warnings.join(" "):"")
+      :"✓ Already fully expanded here.");
+  }catch(e){ setStatus("⚠ "+e.message); btn.disabled=false; btn.textContent=orig; }
+}
+function mergeIntoGraph(data){
+  const add=[];
+  (data.nodes||[]).forEach(n=>{ if(cy.getElementById(n.data.id).empty()) add.push(n); });
+  (data.edges||[]).forEach(e=>{ if(cy.getElementById(e.data.id).empty()) add.push(e); });
+  if(!add.length) return 0;
+  cy.add(add);
+  cy.layout(fcose(false)).run();
+  applyFilters();
+  currentGraph={main:currentGraph.main,meta:currentGraph.meta,
+    nodes:cy.nodes().map(n=>({data:n.data()})),edges:cy.edges().map(e=>({data:e.data()}))};
+  return add.length;
+}
+window.expandNode=expandNode;
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// ---- guided tour --------------------------------------------------------------
+const TOUR=[
+  {sel:null,title:"Welcome to LitGraph 👋",text:"Turn any arXiv paper into an interactive map of its references, citations, similar work — and the authors linking them. Here's a 20-second tour."},
+  {sel:"#fileLabel",title:"Start with a paper",text:"Upload a paper's PDF here…"},
+  {sel:"#arxiv",title:"…or an arXiv id",text:"Prefer typing? Paste an arXiv id like 1706.03762, or a paper title."},
+  {sel:"#mode",title:"Pick a depth",text:"Quick, Deep Research, or Complex — these just load starting numbers into the controls below."},
+  {sel:"#controls",title:"Tune it",text:"Set how many references, similar papers and authors you want — capped at what the API actually allows — and what counts as most important."},
+  {sel:"#go",title:"Build the graph",text:"Hit Analyze. A new paper takes a few seconds; anything you've seen before is instant (cached)."},
+  {sel:".toggles",title:"Focus the view",text:"Toggle references, similar papers, or authors on and off."},
+  {sel:".legend",title:"Read the map",text:"Colours = node types. Bigger paper nodes = more citations. Click any node for its abstract and arXiv link."},
+  {sel:"#toolPng",title:"Save your work",text:"Export the graph as a PNG image or JSON data — and use 🔍 to find any node.",soft:true},
+  {sel:"#gearBtn",title:"Admin & API key",text:"Add your free Semantic Scholar API key and set a password in Admin for higher limits."},
+];
+let tStep=0;
+function startTour(){ tStep=0; $("#tourOverlay").style.display="block"; showStep(); }
+function endTour(){ $("#tourOverlay").style.display="none"; localStorage.setItem("lg_tour_done","1"); }
+function showStep(){
+  const s=TOUR[tStep], spot=$("#tourSpot"), tip=$("#tourTip");
+  let el=s.sel?document.querySelector(s.sel):null;
+  if(s.sel&&(!el||el.offsetParent===null&&getComputedStyle(el).display==="none")){
+    // element hidden (e.g. export tools before a graph) — center the tip instead
+    el=null;
+  }
+  if(el){
+    const r=el.getBoundingClientRect(),pad=6;
+    spot.style.display="block";
+    spot.style.left=(r.left-pad)+"px"; spot.style.top=(r.top-pad)+"px";
+    spot.style.width=(r.width+pad*2)+"px"; spot.style.height=(r.height+pad*2)+"px";
+    let tx=Math.min(r.left,window.innerWidth-330), ty=r.bottom+12;
+    if(ty+180>window.innerHeight) ty=Math.max(12,r.top-190);
+    tip.style.left=Math.max(12,tx)+"px"; tip.style.top=ty+"px";
+  } else {
+    spot.style.display="none";
+    tip.style.left=(window.innerWidth/2-150)+"px"; tip.style.top=(window.innerHeight/2-90)+"px";
+  }
+  const dots=TOUR.map((_,i)=>`<span class="d ${i===tStep?'on':''}"></span>`).join("");
+  const last=tStep===TOUR.length-1;
+  tip.innerHTML=`<h3>${s.title}</h3><p>${s.text}</p>
+    <div class="nav"><div class="dots">${dots}</div>
+    <button class="skip" onclick="endTour()">Skip</button>
+    ${tStep>0?'<button onclick="tPrev()">Back</button>':''}
+    <button class="primary" onclick="tNext()">${last?"Done":"Next"}</button></div>`;
+}
+function tNext(){ if(tStep<TOUR.length-1){ tStep++; showStep(); } else endTour(); }
+function tPrev(){ if(tStep>0){ tStep--; showStep(); } }
+window.tNext=tNext;window.tPrev=tPrev;window.endTour=endTour;window.startTour=startTour;
+window.dismissBanner=dismissBanner;
+window.addEventListener("resize",()=>{ if($("#tourOverlay").style.display==="block") showStep(); });
+</script>

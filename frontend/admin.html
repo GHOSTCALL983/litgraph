@@ -1,0 +1,211 @@
+<title>LitGraph — Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Shreyan Kundu">
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#26303d;--text:#e6edf3;--muted:#8b98a5;
+    --accent:#f2a900;--blue:#58a6ff;--green:#3fb950;--red:#f85149}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 70% -10%,#15233a 0%,var(--bg) 55%);color:var(--text)}
+  a{color:var(--blue);text-decoration:none}
+  .wrap{max-width:720px;margin:0 auto;padding:28px 20px 60px}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+  .brand{font-size:20px;font-weight:800}.brand span{color:var(--accent)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:20px 22px;margin-bottom:16px}
+  .card h2{margin:0 0 4px;font-size:15px}
+  .card p.sub{margin:0 0 14px;color:var(--muted);font-size:12.5px}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  input,select{width:100%;background:#0d1117;color:var(--text);border:1px solid var(--border);
+    border-radius:9px;padding:10px 12px;font-size:14px}
+  button{cursor:pointer;border:1px solid var(--border);background:#1c2530;color:var(--text);
+    border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600}
+  button.primary{background:var(--accent);color:#1a1200;border-color:var(--accent)}
+  button.danger{color:var(--red);border-color:#5a2a2a}
+  button:disabled{opacity:.5;cursor:default}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  .row>div{flex:1;min-width:160px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:6px}
+  .stat{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .stat .n{font-size:20px;font-weight:800}.stat .l{font-size:11px;color:var(--muted);margin-top:2px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .ok{background:#12331c;color:var(--green)}.no{background:#3a2020;color:var(--red)}
+  .msg{font-size:12.5px;margin-top:10px;min-height:16px}
+  .msg.err{color:var(--red)}.msg.good{color:var(--green)}
+  .hint{font-size:12px;color:var(--muted);margin-top:10px}
+  .center{max-width:400px;margin:8vh auto 0}
+  .hide{display:none}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Lit<span>Graph</span> · Admin</div>
+    <div><a href="/">← Back to app</a></div>
+  </div>
+
+  <!-- SETUP (first run) -->
+  <div id="setupView" class="center hide">
+    <div class="card">
+      <h2>Create admin password</h2>
+      <p class="sub">First-time setup. This password protects the admin panel
+        (API key, settings, cache).</p>
+      <label>New password (min 6 chars)</label>
+      <input id="setupPw" type="password" autocomplete="new-password">
+      <label>Confirm password</label>
+      <input id="setupPw2" type="password" autocomplete="new-password">
+      <div style="margin-top:14px"><button class="primary" onclick="doSetup()">Create & sign in</button></div>
+      <div id="setupMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="loginView" class="center hide">
+    <div class="card">
+      <h2>Admin sign in</h2>
+      <p class="sub">Enter your admin password.</p>
+      <label>Password</label>
+      <input id="loginPw" type="password" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doLogin()">
+      <div style="margin-top:14px"><button class="primary" onclick="doLogin()">Sign in</button></div>
+      <div id="loginMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashView" class="hide">
+    <div class="card" style="border-color:#2a4a6a">
+      <h2>📖 Documentation & system map</h2>
+      <p class="sub">The full documentation — every feature in plain English and in
+        technical detail, the real API limits, and an honest account of what LitGraph
+        can't do. The system map is the interactive component graph.</p>
+      <a href="/docs"><button class="primary">Open documentation →</button></a>
+      <a href="/system"><button>System map</button></a>
+      <a href="/docs.pdf" download="LitGraph-Documentation.pdf"><button>⤓ PDF</button></a>
+    </div>
+
+    <div class="card">
+      <h2>Semantic Scholar API key <span id="keyPill" class="pill no">not set</span></h2>
+      <p class="sub">Free & lifelong — request one at
+        <a href="https://www.semanticscholar.org/product/api" target="_blank">semanticscholar.org/product/api</a>.
+        With a key, rate limits basically disappear.</p>
+      <div id="keyCurrent" class="hint"></div>
+      <label>Set / update API key</label>
+      <div class="row">
+        <div><input id="apiKey" type="text" placeholder="paste your key…"></div>
+        <button class="primary" onclick="saveKey()">Save</button>
+        <button class="danger" onclick="removeKey()">Remove</button>
+      </div>
+      <div id="keyMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Usage & cache</h2>
+      <p class="sub">Cached responses make repeat lookups instant and spare the API.</p>
+      <div class="grid">
+        <div class="stat"><div class="n" id="stApi">0</div><div class="l">API calls (session)</div></div>
+        <div class="stat"><div class="n" id="stHits">0</div><div class="l">cache hits (session)</div></div>
+        <div class="stat"><div class="n" id="stCount">0</div><div class="l">cached responses</div></div>
+        <div class="stat"><div class="n" id="stSize">0</div><div class="l">cache size</div></div>
+      </div>
+      <div style="margin-top:14px"><button class="danger" onclick="clearCache()">Clear cache</button></div>
+      <div id="cacheMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Settings</h2>
+      <label>Default research depth</label>
+      <div class="row">
+        <div><select id="defMode">
+          <option value="quick">Quick</option>
+          <option value="deep">Deep Research</option>
+          <option value="complex">Complex</option>
+        </select></div>
+        <button class="primary" onclick="saveSettings()">Save</button>
+      </div>
+      <div id="setMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Change password</h2>
+      <div class="row">
+        <div><label>Current</label><input id="curPw" type="password"></div>
+        <div><label>New (min 6)</label><input id="newPw" type="password"></div>
+        <button class="primary" onclick="changePw()">Update</button>
+      </div>
+      <div id="pwMsg" class="msg"></div>
+    </div>
+
+    <div style="text-align:right"><button onclick="logout()">Sign out</button></div>
+  </div>
+
+  <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:26px">
+    LitGraph · Created by <b style="color:var(--text)">Shreyan Kundu</b>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const show=id=>{["setupView","loginView","dashView"].forEach(v=>$("#"+v).classList.toggle("hide",v!==id));};
+async function api(path,method="POST",body){
+  const r=await fetch(path,{method,headers:body?{"Content-Type":"application/json"}:{},
+    body:body?JSON.stringify(body):undefined});
+  let d={}; try{d=await r.json()}catch(e){}
+  return {ok:r.ok,status:r.status,d};
+}
+function msg(el,text,good){const e=$(el);e.textContent=text||"";e.className="msg "+(good?"good":"err");}
+function fmtBytes(b){return b<1024?b+" B":b<1048576?(b/1024).toFixed(1)+" KB":(b/1048576).toFixed(1)+" MB";}
+
+async function boot(){
+  const cfg=(await api("/api/config","GET")).d;
+  if(!cfg.is_setup){ show("setupView"); return; }
+  const st=await api("/api/admin/status","GET");
+  if(st.ok){ fillDash(st.d); show("dashView"); }
+  else { show("loginView"); }
+}
+async function doSetup(){
+  const p=$("#setupPw").value, p2=$("#setupPw2").value;
+  if(p!==p2){ msg("#setupMsg","Passwords don't match."); return; }
+  const r=await api("/api/admin/setup","POST",{password:p});
+  if(r.ok) boot(); else msg("#setupMsg",r.d.error||"Failed");
+}
+async function doLogin(){
+  const r=await api("/api/admin/login","POST",{password:$("#loginPw").value});
+  if(r.ok) boot(); else msg("#loginMsg",r.d.error||"Failed");
+}
+async function logout(){ await api("/api/admin/logout"); boot(); }
+
+function fillDash(d){
+  $("#keyPill").textContent=d.has_key?"active":"not set";
+  $("#keyPill").className="pill "+(d.has_key?"ok":"no");
+  $("#keyCurrent").textContent=d.has_key?`Current: ${d.key_masked} (source: ${d.key_source})`:"No key set — using the free anonymous pool.";
+  $("#stApi").textContent=d.usage.api_calls; $("#stHits").textContent=d.usage.cache_hits;
+  $("#stCount").textContent=d.cache.count; $("#stSize").textContent=fmtBytes(d.cache.bytes);
+  $("#defMode").value=d.settings.default_mode;
+}
+async function refresh(){ const st=await api("/api/admin/status","GET"); if(st.ok) fillDash(st.d); }
+
+async function saveKey(){
+  const r=await api("/api/admin/apikey","POST",{api_key:$("#apiKey").value});
+  if(r.ok){ msg("#keyMsg","Saved.",true); $("#apiKey").value=""; refresh(); }
+  else msg("#keyMsg",r.d.error||"Failed");
+}
+async function removeKey(){
+  const r=await api("/api/admin/apikey","POST",{api_key:""});
+  if(r.ok){ msg("#keyMsg","Removed.",true); refresh(); } else msg("#keyMsg",r.d.error||"Failed");
+}
+async function clearCache(){
+  const r=await api("/api/admin/clear-cache","POST",{});
+  if(r.ok){ msg("#cacheMsg",`Cleared ${r.d.removed} files.`,true); refresh(); }
+  else msg("#cacheMsg",r.d.error||"Failed");
+}
+async function saveSettings(){
+  const r=await api("/api/admin/settings","POST",{default_mode:$("#defMode").value});
+  if(r.ok) msg("#setMsg","Saved.",true); else msg("#setMsg",r.d.error||"Failed");
+}
+async function changePw(){
+  const r=await api("/api/admin/password","POST",{current:$("#curPw").value,new:$("#newPw").value});
+  if(r.ok){ msg("#pwMsg","Password updated.",true); $("#curPw").value="";$("#newPw").value=""; }
+  else msg("#pwMsg",r.d.error||"Failed");
+}
+boot();
+</script>

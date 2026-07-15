@@ -1,0 +1,38 @@
+# --- Secrets & operator data (MUST never be committed) -----------------------
+# config.json holds the Semantic Scholar API key and the PBKDF2 admin password
+# hash. Verify with: git check-ignore -v backend/config.json
+backend/config.json
+config.json
+.env
+.env.*
+*.key
+*.pem
+
+# Cached API responses. Regenerable, and not ours to redistribute.
+backend/.cache/
+.cache/
+
+# --- Internal engineering notes (not distributed) ----------------------------
+PROJECT_STATE.md
+HOW_TO_RUN.txt
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+venv/
+.venv/
+env/
+
+# --- Tooling & OS ------------------------------------------------------------
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

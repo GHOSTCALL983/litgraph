@@ -1,0 +1,40 @@
+Copyright (c) 2026 Shreyan Kundu. All rights reserved.
+
+LitGraph — Graphical Literature Survey
+
+This software, its source code, documentation and associated materials
+(the "Software") are proprietary and confidential.
+
+No licence is granted, whether express or implied, to any person obtaining a
+copy of the Software to use, copy, modify, merge, publish, distribute,
+sublicense, or sell copies of the Software, in whole or in part, without the
+prior express written permission of the copyright holder.
+
+Unauthorised copying, redistribution, or use of the Software, via any medium,
+is strictly prohibited.
+
+THIRD-PARTY DATA AND COMPONENTS
+------------------------------
+The Software retrieves data from the Semantic Scholar Academic Graph API,
+operated by the Allen Institute for Artificial Intelligence (AI2). That data is
+NOT covered by this licence. It is governed by the Semantic Scholar API License
+Agreement and by the individual licences accompanying the returned data (which
+may include CC BY-NC or ODC-BY terms):
+
+    https://www.semanticscholar.org/product/api/license
+
+Operators of the Software are responsible for holding their own Semantic Scholar
+API credentials and for complying with those terms, including the requirement to
+attribute Semantic Scholar. See DATA-AND-LICENSING.md.
+
+The Software loads Cytoscape.js (MIT licence) and its fcose layout extension
+from a public CDN at runtime. Those components remain under their own licences.
+
+DISCLAIMER
+----------
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

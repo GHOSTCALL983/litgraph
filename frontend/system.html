@@ -1,0 +1,339 @@
+<title>LitGraph — System Map & Documentation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Shreyan Kundu">
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#26303d;--text:#e6edf3;--muted:#8b98a5;
+    --accent:#f2a900;--blue:#58a6ff;--green:#3fb950;--purple:#bc8cff;--pink:#f778ba;--amber:#d29922}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);
+    color:var(--text);line-height:1.55}
+  a{color:var(--blue);text-decoration:none}
+  header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;
+    padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--border)}
+  header .brand{font-size:18px;font-weight:800}.brand span{color:var(--accent)}
+  header .sub{color:var(--muted);font-size:13px}
+  header .grow{flex:1}
+  .layout{display:flex;max-width:1180px;margin:0 auto;gap:26px;padding:22px 20px 80px}
+  nav{position:sticky;top:64px;align-self:flex-start;width:190px;flex:none;font-size:13px}
+  nav a{display:block;color:var(--muted);padding:5px 8px;border-left:2px solid transparent;border-radius:0 6px 6px 0}
+  nav a:hover,nav a.active{color:var(--text);border-left-color:var(--accent);background:#12171e}
+  main{flex:1;min-width:0}
+  section{margin-bottom:38px;scroll-margin-top:70px}
+  h2{font-size:20px;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  h3{font-size:15px;margin:18px 0 6px}
+  p{margin:8px 0}
+  code{background:#12171e;border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12.5px;color:#f0b872}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:10px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  ul{margin:8px 0;padding-left:20px}li{margin:4px 0}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+  th{background:#12171e;text-align:left;padding:7px 10px;border:1px solid var(--border)}
+  td{padding:7px 10px;border:1px solid var(--border);vertical-align:top}
+  .step{display:flex;gap:12px;margin:10px 0}
+  .step .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#1a1200;
+    font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px}
+  /* architecture graph */
+  #diagram{display:flex;gap:14px;height:560px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  #cy{flex:1;background:radial-gradient(700px 400px at 60% 0%,#121b2b,var(--bg))}
+  #detail{width:300px;flex:none;background:var(--panel);border-left:1px solid var(--border);
+    padding:16px;overflow-y:auto;font-size:13px}
+  #detail h4{margin:.2em 0}
+  #detail .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+  #detail .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:12px}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px}
+  .foot{max-width:1180px;margin:0 auto;padding:0 20px 50px;color:var(--muted);font-size:12px;text-align:center}
+  @media(max-width:820px){nav{display:none}.grid2{grid-template-columns:1fr}#detail{display:none}}
+</style>
+
+<header>
+  <div class="brand">Lit<span>Graph</span> · System Map</div>
+  <div class="sub">how it works, end to end</div>
+  <div class="grow"></div>
+  <a href="/docs">📖 Docs</a> &nbsp; <a href="/admin">← Admin</a> &nbsp; <a href="/">Open app →</a>
+</header>
+
+<div class="layout">
+  <nav id="toc">
+    <a href="#overview">Overview</a>
+    <a href="#architecture">Architecture graph</a>
+    <a href="#flow">Request flow</a>
+    <a href="#backend">Backend modules</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#data">Data, cache & limits</a>
+    <a href="#auth">Auth & admin</a>
+    <a href="#features">Features</a>
+    <a href="#stack">Tech stack</a>
+    <a href="#built">How it was built</a>
+    <a href="#files">File map</a>
+    <a href="#deploy">Running it</a>
+  </nav>
+
+  <main>
+    <section id="overview">
+      <h2>Overview</h2>
+      <p><b>LitGraph</b> turns any arXiv paper into an interactive map of its references,
+      similar work, and the authors linking them — and lets you grow that map
+      by expanding any node. It's a small, dependency-light system: a <b>vanilla-JS
+      frontend</b> rendering a <b>Cytoscape.js</b> graph, a <b>pure-Python standard-library
+      server</b> (no web framework), and open scholarly data from the <b>Semantic Scholar
+      Graph API</b>. Everything runs for free with no API key thanks to an on-disk cache.</p>
+      <div class="card"><b>Design principles:</b> no heavy dependencies (stdlib server;
+      only <code>requests</code> + <code>pypdf</code>), degrade gracefully under rate limits,
+      cache aggressively, keep the whole thing runnable with one <code>python backend/server.py</code>.</div>
+    </section>
+
+    <section id="architecture">
+      <h2>Architecture graph</h2>
+      <p>Every box is a real component; arrows are data flow. <b>Click any node</b> for details.</p>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--blue)"></i>Frontend</span>
+        <span><i class="dot" style="background:var(--accent)"></i>Server</span>
+        <span><i class="dot" style="background:var(--amber)"></i>Endpoint</span>
+        <span><i class="dot" style="background:var(--purple)"></i>Backend logic</span>
+        <span><i class="dot" style="background:var(--green)"></i>Storage</span>
+        <span><i class="dot" style="background:var(--pink)"></i>External</span>
+      </div>
+      <div id="diagram">
+        <div id="cy"></div>
+        <div id="detail"><p class="k">Tip</p><p>Click a component in the graph to read what it
+          does, its key functions, and its tech.</p></div>
+      </div>
+    </section>
+
+    <section id="flow">
+      <h2>Request flow — analyzing a paper</h2>
+      <div class="step"><div class="n">1</div><div>You enter an arXiv id (or upload a PDF) and hit
+        <b>Analyze</b>. The browser POSTs to <code>/api/analyze?mode=deep</code> with
+        <code>{"seeds":[…]}</code> (PDFs first go to <code>/api/extract</code> to detect their id/title).</div></div>
+      <div class="step"><div class="n">2</div><div><code>server.py</code> routes it to
+        <code>graph_builder.build_graph_multi()</code>.</div></div>
+      <div class="step"><div class="n">3</div><div>For each seed, <code>graph_builder</code> asks
+        <code>sources.py</code> to <b>resolve</b> the paper and fetch its <b>references</b>,
+        <b>similar</b> papers, and <b>authors</b> from Semantic Scholar. Each source is
+        pulled as a large pool, then filtered to arXiv, ranked and trimmed to your limit.</div></div>
+      <div class="step"><div class="n">4</div><div>Every API response is checked against
+        <code>cache.py</code> first (30-day disk cache) — so repeats are instant and the rate
+        limit is spared. Misses hit the network with throttling + backoff.</div></div>
+      <div class="step"><div class="n">5</div><div><code>graph_builder</code> merges everything into
+        one deduplicated set of <b>nodes</b> (papers + authors) and <b>edges</b>
+        (cites / similar / authored), keeping arXiv papers.</div></div>
+      <div class="step"><div class="n">6</div><div>The JSON graph returns to the browser, which renders
+        it with <b>Cytoscape.js</b> (fcose force layout). Clicking a node → details; clicking
+        <b>Expand</b> POSTs to <code>/api/expand</code> and merges the new neighborhood in place.</div></div>
+    </section>
+
+    <section id="backend">
+      <h2>Backend modules</h2>
+      <div class="grid2">
+        <div class="card"><h3>server.py</h3><p>Pure-stdlib <code>ThreadingHTTPServer</code> — no
+          framework. Serves the HTML pages and a small JSON API; parses cookies for admin sessions;
+          sends <code>Set-Cookie</code> on login. Routes <code>/api/analyze</code>,
+          <code>/api/expand</code>, <code>/api/extract</code>, <code>/api/config</code>, and the
+          <code>/api/admin/*</code> family.</p></div>
+        <div class="card"><h3>graph_builder.py</h3><p>The core. <code>MODES</code> (quick/deep/complex)
+          set how far to explore. <code>_add_seed</code> builds one paper's neighborhood;
+          <code>build</code> merges many seeds into one graph (dedup by id); <code>expand</code> grows
+          the graph from an existing node. Adds author "authored" edges so co-authors connect.</p></div>
+        <div class="card"><h3>sources.py</h3><p>Semantic Scholar Graph API client:
+          <code>resolve</code>, <code>references</code>, <code>similar</code>,
+          <code>author_papers</code>. Polite throttle, exponential backoff, and <b>graceful 429</b>
+          handling (returns partial + a warning, never crashes). Reads the API key from config.</p></div>
+        <div class="card"><h3>cache.py</h3><p>Tiny on-disk JSON cache of every successful API response
+          (SHA-keyed files, 30-day TTL). This is what makes the no-key setup comfortable: repeats are
+          instant and the network is barely touched.</p></div>
+        <div class="card"><h3>config.py</h3><p>Persistent <code>config.json</code>: PBKDF2-hashed admin
+          password + salt, the API key, and settings. In-memory sessions, cache/usage stats, and the
+          API-key getter (config → <code>S2_API_KEY</code> env fallback). Honors
+          <code>LITGRAPH_DATA_DIR</code>.</p></div>
+        <div class="card"><h3>pdf_extract.py</h3><p>Uses <code>pypdf</code> to pull an
+          <code>arXiv:id</code> or a title out of an uploaded PDF — just enough to resolve the paper
+          on Semantic Scholar (which then provides the real citation graph).</p></div>
+      </div>
+    </section>
+
+    <section id="frontend">
+      <h2>Frontend</h2>
+      <p>A single page, <code>frontend/index.html</code>, built with <b>vanilla JavaScript</b> — no
+      build step, no framework. It renders the graph with <b>Cytoscape.js</b> + the <b>fcose</b>
+      force-layout (loaded from a CDN), and handles: paper search / PDF upload, the batch tray,
+      node detail panel, the <b>Expand</b> action, filter toggles, PNG/JSON export, node search,
+      recent-papers history, the API-key banner, and the guided tour. <code>admin.html</code> and
+      this <code>system.html</code> page are separate self-contained pages in the same style.</p>
+    </section>
+
+    <section id="data">
+      <h2>Data, cache & rate limits</h2>
+      <p><b>Source:</b> the <a href="https://api.semanticscholar.org" target="_blank">Semantic Scholar
+      Graph API</a> — free and open — for references, recommendations, authors, and arXiv
+      ids. Every paper node links straight to <b>arXiv</b>. We keep arXiv papers (open access).</p>
+      <p><b>Why not OpenAlex</b> (which needs no key at all)? It can't reliably resolve a paper from
+      its arXiv id — poor arXiv-preprint coverage, no arXiv-id filter — which would break the core
+      "identify the paper you uploaded" step. So Semantic Scholar + a cache is the better free path.</p>
+      <p><b>Rate limits:</b> the anonymous pool is limited. LitGraph throttles requests, backs off on
+      429, caches everything for 30 days, and degrades gracefully (partial graph + a clear message)
+      instead of failing. A free lifelong API key (set in Admin) removes the limits.</p>
+    </section>
+
+    <section id="auth">
+      <h2>Auth & admin</h2>
+      <p>On first run you set an admin password (<code>/api/admin/setup</code>). It's stored as a
+      <b>PBKDF2-HMAC-SHA256</b> hash with a random salt (200k iterations) — never in plaintext. Login
+      creates a random session token stored in an <code>HttpOnly</code> cookie; admin endpoints check
+      it. From Admin you manage the API key, default depth, cache, and password — and open this page.</p>
+    </section>
+
+    <section id="features">
+      <h2>Features</h2>
+      <ul>
+        <li><b>Interactive graph</b> — papers (sized by citations) + authors, colour-coded, clickable.</li>
+        <li><b>Per-source controls</b> — set how many references / similar papers / authors to
+          pull, and what counts as most important (most cited / newest / oldest). Presets load
+          starting numbers.</li>
+        <li><b>Batch / multi-paper</b> — queue several papers (or PDFs); shared references and authors
+          become the connective tissue in one merged graph.</li>
+        <li><b>Node expansion</b> — click a paper or author and grow the graph outward from it.</li>
+        <li><b>Guided tour</b>, <b>PNG/JSON export</b>, <b>node search</b>, <b>recent papers</b>.</li>
+        <li><b>Admin panel</b> — API key, settings, cache/usage stats, password.</li>
+      </ul>
+    </section>
+
+    <section id="stack">
+      <h2>Tech stack</h2>
+      <table>
+        <tr><th>Layer</th><th>Technology</th></tr>
+        <tr><td>Frontend</td><td>HTML5 + vanilla JavaScript (no framework/build); Cytoscape.js 3.30 + fcose layout (CDN)</td></tr>
+        <tr><td>Backend</td><td>Python 3.12 standard library — <code>http.server.ThreadingHTTPServer</code> (no Flask/FastAPI)</td></tr>
+        <tr><td>Python libs</td><td><code>requests</code> (HTTP), <code>pypdf</code> (PDF parsing)</td></tr>
+        <tr><td>Auth</td><td>PBKDF2-HMAC-SHA256 via <code>hashlib</code>; random session tokens; HttpOnly cookies</td></tr>
+        <tr><td>Data</td><td>Semantic Scholar Graph API; arXiv links; JSON disk cache (30-day TTL)</td></tr>
+        <tr><td>Packaging</td><td>None — runs from source on Python 3.10+; no container, no build step</td></tr>
+        <tr><td>Tooling</td><td>Playwright (UI screenshots/testing), curl</td></tr>
+      </table>
+    </section>
+
+    <section id="built">
+      <h2>How it was built</h2>
+      <p>LitGraph grew feature by feature:</p>
+      <ul>
+        <li><b>Core graph</b> — resolve an arXiv paper on Semantic Scholar, pull references/
+          similar/authors, render with Cytoscape.</li>
+        <li><b>Data-source decision</b> — evaluated OpenAlex for a no-key option; rejected it for poor
+          arXiv-id resolution and kept Semantic Scholar.</li>
+        <li><b>Free-forever hardening</b> — added the disk cache + graceful rate-limit handling so it
+          runs with no key.</li>
+        <li><b>Product-grade layer</b> — admin panel (auth, API key, settings, stats), first-run setup,
+          guided tour, PNG/JSON export, node search, recent history, API-key banner.</li>
+        <li><b>Batch / multi-paper mode</b> — merge several papers into one connected graph.</li>
+        <li><b>Node expansion</b> — progressive, click-to-grow exploration.</li>
+        <li><b>Zero-build</b> — no bundler, no container; edit a file and restart.</li>
+      </ul>
+    </section>
+
+    <section id="files">
+      <h2>File map</h2>
+      <table>
+        <tr><th>Path</th><th>Role</th></tr>
+        <tr><td>backend/server.py</td><td>stdlib HTTP server + routes</td></tr>
+        <tr><td>backend/graph_builder.py</td><td>builds/merges/expands the graph</td></tr>
+        <tr><td>backend/sources.py</td><td>Semantic Scholar client</td></tr>
+        <tr><td>backend/cache.py</td><td>on-disk response cache</td></tr>
+        <tr><td>backend/config.py</td><td>config, auth, sessions, stats</td></tr>
+        <tr><td>backend/pdf_extract.py</td><td>PDF → arXiv id / title</td></tr>
+        <tr><td>frontend/index.html</td><td>the app UI (Cytoscape graph)</td></tr>
+        <tr><td>frontend/admin.html</td><td>admin panel</td></tr>
+        <tr><td>frontend/system.html</td><td>this page</td></tr>
+        <tr><td>tools/build_docs_pdf.py</td><td>renders docs.html to the documentation PDF (dev-only)</td></tr>
+      </table>
+    </section>
+
+    <section id="deploy">
+      <h2>Running it</h2>
+      <p>There's no container and no build step — it's a two-dependency Python app that runs
+      straight from source. <code>config.json</code> (admin password hash + API key) and the
+      response cache live in <code>backend/</code>, or wherever you point
+      <code>LITGRAPH_DATA_DIR</code>. Set <code>PORT</code> to move off 8000.</p>
+      <div class="card"><code>pip install -r requirements.txt</code> &nbsp;then&nbsp;
+        <code>python backend/server.py</code> &nbsp;→&nbsp; http://localhost:8000</div>
+    </section>
+  </main>
+</div>
+
+<div class="foot">LitGraph · Created by <b style="color:var(--text)">Shreyan Kundu</b></div>
+
+<script>
+const COL={frontend:"#58a6ff",server:"#f2a900",endpoint:"#d29922",logic:"#bc8cff",storage:"#3fb950",external:"#f778ba"};
+const N=[
+ ["browser","Browser UI\n(index.html)","frontend",180,40,"The single-page app. Vanilla JS renders the Cytoscape graph and handles search, upload, batch, expand, tour, export.","HTML5 · vanilla JS · Cytoscape.js"],
+ ["admin","Admin UI\n(admin.html)","frontend",440,40,"Password setup/login, API-key management, settings, cache & usage stats, change password, and the link to this system map.","HTML5 · vanilla JS"],
+ ["cyto","Cytoscape.js\n(+fcose)","frontend",180,130,"Force-directed graph rendering, node styling by type, zoom/pan, interaction. Loaded from a CDN.","Cytoscape.js 3.30 · fcose"],
+ ["server","HTTP Server\n(server.py)","server",320,150,"Pure Python stdlib ThreadingHTTPServer. Routes pages + JSON API, cookie sessions. No web framework.","Python 3.12 · http.server"],
+ ["e_analyze","/api/analyze","endpoint",100,255,"Builds a graph for one or many seeds. Body {seeds:[…]} or raw PDF. -> graph_builder.","POST"],
+ ["e_expand","/api/expand","endpoint",240,255,"Grows the graph from an existing node (paper or author). Returns only new nodes/edges.","POST"],
+ ["e_extract","/api/extract","endpoint",385,255,"Reads an uploaded PDF and returns its arXiv id / title so it can join a batch.","POST"],
+ ["e_config","/api/config","endpoint",520,255,"Public UI hints: has_key, default_mode, is_setup.","GET"],
+ ["e_admin","/api/admin/*","endpoint",620,150,"setup, login, logout, apikey, settings, password, clear-cache, status. Cookie-protected.","GET/POST"],
+ ["gb","graph_builder.py","logic",210,355,"Turns seeds into nodes/edges; MODES; merges multiple seeds; expands from a node; arXiv-only filtering.","Python"],
+ ["pdf","pdf_extract.py","logic",385,355,"Pulls arXiv id / title from a PDF with pypdf.","Python · pypdf"],
+ ["cfg","config.py","logic",620,355,"config.json, PBKDF2 auth, sessions, API-key getter, stats.","Python · hashlib"],
+ ["src","sources.py","logic",210,455,"Semantic Scholar client: resolve/references/similar/author_papers. Throttle + backoff + graceful 429. Owns the API's real limit ceilings and does its own sorting.","Python · requests"],
+ ["cache","cache.py","logic",370,455,"On-disk JSON cache of API responses, 30-day TTL.","Python"],
+ ["s2","Semantic Scholar\nGraph API","external",210,560,"Free, open scholarly graph: references, recommendations, authors, arXiv ids.","External API"],
+ ["arxiv","arXiv.org","external",60,470,"Open-access papers; every paper node links to its abs / PDF.","External"],
+ ["cjson","config.json","storage",620,455,"Hashed password + salt, API key, settings.","JSON on disk"],
+ ["dcache",".cache/","storage",370,560,"Cached API responses (SHA-keyed files).","JSON on disk"],
+ ["datadir","Data dir\nLITGRAPH_DATA_DIR","storage",760,500,"Where config.json and the response cache live. Defaults to backend/; set LITGRAPH_DATA_DIR to move them.","Local disk"],
+];
+const E=[
+ ["browser","server","HTTP/JSON"],["admin","server",""],["browser","cyto","renders"],
+ ["browser","arxiv","links"],
+ ["server","e_analyze",""],["server","e_expand",""],["server","e_extract",""],
+ ["server","e_config",""],["server","e_admin",""],
+ ["e_analyze","gb",""],["e_expand","gb",""],["e_extract","pdf",""],["e_admin","cfg",""],["e_config","cfg",""],
+ ["gb","src",""],["src","cache",""],["src","s2",""],["cfg","cjson",""],["cache","dcache",""],
+ ["datadir","cjson","holds"],["datadir","dcache","holds"],
+];
+const cy=cytoscape({container:document.getElementById("cy"),
+  elements:[
+    ...N.map(n=>({data:{id:n[0],label:n[1],layer:n[2],desc:n[5],tech:n[6]},position:{x:n[3],y:n[4]}})),
+    ...E.map((e,i)=>({data:{id:"e"+i,source:e[0],target:e[1],label:e[2]}}))],
+  layout:{name:"preset",fit:true,padding:30},
+  wheelSensitivity:.3,
+  style:[
+    {selector:"node",style:{"label":"data(label)","text-wrap":"wrap","text-valign":"center",
+      "color":"#0b1016","font-size":9,"font-weight":"bold","width":92,"height":40,"shape":"round-rectangle",
+      "background-color":n=>COL[n.data("layer")],"text-max-width":86}},
+    {selector:'node[layer="external"]',style:{"color":"#2a0f1c"}},
+    {selector:'node[layer="storage"]',style:{"color":"#07230f"}},
+    {selector:"edge",style:{"width":1.4,"line-color":"#3d4b5c","curve-style":"bezier",
+      "target-arrow-shape":"triangle","target-arrow-color":"#3d4b5c","arrow-scale":.8,"opacity":.75,
+      "label":"data(label)","font-size":7,"color":"#8b98a5","text-background-color":"#0d1117",
+      "text-background-opacity":1,"text-background-padding":2}},
+    {selector:".sel",style:{"border-width":3,"border-color":"#fff"}},
+    {selector:".fade",style:{"opacity":.18}},
+  ]});
+cy.on("tap","node",e=>{
+  const d=e.target.data();
+  cy.elements().removeClass("sel fade"); cy.elements().addClass("fade");
+  e.target.closedNeighborhood().removeClass("fade"); e.target.addClass("sel");
+  document.getElementById("detail").innerHTML=
+    `<span class="tag" style="background:${COL[d.layer]};color:#0b1016">${d.layer.toUpperCase()}</span>
+     <h4>${d.label.replace(/\n/g," ")}</h4>
+     <p class="k">What it does</p><p>${d.desc}</p>
+     <p class="k">Tech</p><p>${d.tech}</p>`;
+});
+cy.on("tap",e=>{ if(e.target===cy){ cy.elements().removeClass("sel fade");
+  document.getElementById("detail").innerHTML='<p class="k">Tip</p><p>Click a component in the graph to read what it does, its key functions, and its tech.</p>'; }});
+
+// TOC scroll-spy
+const links=[...document.querySelectorAll("#toc a")];
+const secs=links.map(a=>document.querySelector(a.getAttribute("href")));
+addEventListener("scroll",()=>{
+  let cur=secs[0].id;
+  for(const s of secs){ if(s.getBoundingClientRect().top<120) cur=s.id; }
+  links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+cur));
+},{passive:true});
+</script>
